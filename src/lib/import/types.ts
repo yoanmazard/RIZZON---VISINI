@@ -1,0 +1,82 @@
+export type LotStatus = 'Loué' | 'Vacant';
+
+export type CleanLotImportRow = {
+  ref_lot: string;
+  main_type: string;
+  nb_pieces: number | null;
+  surface: number | null;
+  building_name: string | null;
+  address: string | null;
+  floor: string | null;
+  dpe_grade: string | null;
+  status: LotStatus;
+  is_annex: boolean;
+  tenant_label: string;
+  net_rent: number;
+  rental_charges: number;
+  deposit: number;
+  lease_seniority_months: number | null;
+  notice_in_progress: boolean;
+  linked_annex_refs: string[];
+  designation: string | null;
+};
+
+export type ImportPreviewRow = CleanLotImportRow & {
+  source_ref: string;
+};
+
+export type ImportParseResult = {
+  rows: CleanLotImportRow[];
+  preview: ImportPreviewRow[];
+  warnings: string[];
+  stats: {
+    total: number;
+    rented: number;
+    vacant: number;
+    annexes: number;
+    excludedColumns: string[];
+  };
+};
+
+export type PropertyOverview = {
+  id: string;
+  ref_lot: string;
+  main_type: string;
+  nb_pieces: number | null;
+  surface: number | null;
+  building_name: string | null;
+  address: string | null;
+  floor: string | null;
+  dpe_grade: string | null;
+  status: LotStatus;
+  is_annex: boolean;
+  tenant_label: string | null;
+  net_rent: number | null;
+  rental_charges: number | null;
+  deposit: number | null;
+  lease_seniority_months: number | null;
+  notice_in_progress: boolean | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LotLink = {
+  id: string;
+  primary_id: string;
+  annex_id: string;
+  link_source: 'auto' | 'manuel';
+};
+
+export type PropertyTreeRow = PropertyOverview & {
+  depth: number;
+  link_source: 'auto' | 'manuel' | null;
+  parent_ref_lot: string | null;
+  subRows?: PropertyTreeRow[];
+};
+
+export type ImportActionResult = {
+  ok: boolean;
+  message: string;
+  imported?: number;
+  linksCreated?: number;
+};

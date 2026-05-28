@@ -1,0 +1,53 @@
+{
+  "name": "rizzon-visini",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:check": "node scripts/check-db.mjs",
+    "db:probe": "node scripts/probe-db.mjs",
+    "db:verify": "node scripts/verify-db.mjs",
+    "db:push": "node scripts/push-db.mjs",
+    "db:seed": "node scripts/apply-seed.mjs",
+    "supabase:link": "powershell -ExecutionPolicy Bypass -File scripts/setup-link.ps1",
+    "supabase:auth": "powershell -ExecutionPolicy Bypass -File scripts/setup-auth-config.ps1",
+    "vercel:link": "vercel link --project v0-acquisitionrizzon",
+    "vercel:deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table-devtools": "^8.21.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.3",
+    "papaparse": "^5.5.3",
+    "pg": "^8.21.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^22.15.29",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^15.3.3",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.7"
+  }
+}
