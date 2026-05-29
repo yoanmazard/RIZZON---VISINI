@@ -10,10 +10,17 @@ import {
   type SimulationFormValues,
 } from '@/lib/simulations/types';
 import { calculateProfitability } from '@/lib/calculations/rentability';
+import { perSqm } from '@/lib/calculations/kpi';
 import { saveIndividualSimulation } from '@/lib/simulations/actions';
 import { findLinkGroup, getPrimaryIdForPropertyId } from '@/lib/deliation/groups';
 import { useDeliation } from '@/lib/deliation/context';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/format';
+import {
+  formatCurrency,
+  formatEuroPerSqm,
+  formatNumber,
+  formatPercent,
+  formatSurface,
+} from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,17 +81,17 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
     return getEffectiveFormValues(property, simulation ?? undefined);
   }, [property, deliated, getEffectiveFormValues, simulation]);
 
-  const metrics = useMemo(() => {
-    if (!property) return calculateProfitability(formValuesToCalculationInputs(values));
-
-    if (deliated) {
-      return calculateProfitability(
-        getEffectiveCalculationInputs(property, simulation ?? undefined),
-      );
+  const effectiveInputs = useMemo(() => {
+    if (property && deliated) {
+      return getEffectiveCalculationInputs(property, simulation ?? undefined);
     }
-
-    return calculateProfitability(formValuesToCalculationInputs(values));
+    return formValuesToCalculationInputs(values);
   }, [property, deliated, getEffectiveCalculationInputs, simulation, values]);
+
+  const metrics = useMemo(
+    () => calculateProfitability(effectiveInputs),
+    [effectiveInputs],
+  );
 
   if (!property) return null;
 
@@ -170,7 +177,26 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
               <Info label="Statut" value={property.status} />
               <Info label="Locataire" value={property.tenant_label ?? '—'} />
               <Info label="Loyer HC actuel" value={formatCurrency(property.net_rent)} />
-              <Info label="Surface" value={`${formatNumber(property.surface, 1)} m²`} />
+              <Info
+                label="Loyer HC /m²"
+                value={formatEuroPerSqm(perSqm(property.net_rent, property.surface), 1)}
+              />
+              <Info label="Surface" value={formatSurface(property.surface, 1)} />
+              <Info
+                label="Pièces"
+                value={property.nb_pieces != null ? String(property.nb_pieces) : '—'}
+              />
+              <Info label="Étage" value={property.floor ?? '—'} />
+              <Info label="Charges (provisions)" value={formatCurrency(property.rental_charges)} />
+              <Info label="Dépôt de garantie" value={formatCurrency(property.deposit)} />
+              <Info
+                label="Ancienneté bail"
+                value={
+                  property.lease_seniority_months != null
+                    ? `${formatNumber(property.lease_seniority_months)} mois`
+                    : '—'
+                }
+              />
               <Info label="DPE" value={property.dpe_grade ?? '—'} />
               <Info label="Adresse" value={property.address ?? '—'} />
             </div>
@@ -266,6 +292,18 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="Coût de revient" value={formatCurrency(metrics.totalCost)} />
+              <MetricCard
+                label="Prix d'achat /m²"
+                value={formatEuroPerSqm(perSqm(effectiveInputs.targetPurchasePrice, property.surface))}
+              />
+              <MetricCard
+                label="Coût de revient /m²"
+                value={formatEuroPerSqm(perSqm(metrics.totalCost, property.surface))}
+              />
+              <MetricCard
+                label="Loyer cible /m²"
+                value={formatEuroPerSqm(perSqm(effectiveInputs.targetRent, property.surface), 1)}
+              />
               <MetricCard
                 label="Rentabilité brute"
                 value={formatPercent(metrics.grossYield ? metrics.grossYield * 100 : null)}

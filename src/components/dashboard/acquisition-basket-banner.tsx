@@ -1,16 +1,18 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ShoppingCart, Save, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { ShoppingCart, Save, Trash2, Maximize2 } from 'lucide-react';
 import type { PropertyTreeRow } from '@/lib/import/types';
 import type { ScenarioRecord } from '@/lib/basket/types';
 import { computeBasketSummary, inferScenarioMode } from '@/lib/basket/compute-basket';
+import { perSqm } from '@/lib/calculations/kpi';
 import { useDeliation } from '@/lib/deliation/context';
 import { findLinkGroup } from '@/lib/deliation/groups';
 import { createDeliationGroupState } from '@/lib/deliation/ventilation';
 import { saveScenario, deleteScenario } from '@/lib/scenarios/actions';
 import { ExportLotsButton } from '@/components/dashboard/export-lots-button';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/format';
+import { formatCurrency, formatEuroPerSqm, formatNumber, formatPercent } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -137,6 +139,12 @@ export function AcquisitionBasketBanner({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/panier">
+                <Maximize2 className="mr-2 h-4 w-4" />
+                Panier détaillé
+              </Link>
+            </Button>
             <ExportLotsButton
               properties={selectedProperties}
               scenarioName={scenarioName || `Panier ${summary.mode}`}
@@ -158,9 +166,16 @@ export function AcquisitionBasketBanner({
 
         <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
           <Metric label="Prix achat cible" value={formatCurrency(summary.totalPurchasePrice)} />
+          <Metric
+            label="Prix /m²"
+            value={formatEuroPerSqm(perSqm(summary.totalPurchasePrice, summary.totalSurface))}
+          />
           <Metric label="Coût de revient" value={formatCurrency(summary.totalCost)} />
-          <Metric label="Loyer HC actuel" value={formatCurrency(summary.currentRent)} />
           <Metric label="Loyer HC cible" value={formatCurrency(summary.targetRent)} />
+          <Metric
+            label="Loyer /m²"
+            value={formatEuroPerSqm(perSqm(summary.targetRent, summary.totalSurface), 1)}
+          />
           <Metric
             label="Rentabilité brute"
             value={formatPercent(summary.grossYield ? summary.grossYield * 100 : null)}
@@ -171,7 +186,6 @@ export function AcquisitionBasketBanner({
             highlight
           />
           <Metric label="Plus-value latente" value={formatCurrency(summary.latentCapitalGain)} />
-          <Metric label="Stratégie" value={summary.mode === 'lié' ? 'Ensemble lié' : 'Déliée'} />
         </div>
 
         {summary.mode === 'délié' && (

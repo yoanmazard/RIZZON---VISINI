@@ -21,6 +21,9 @@ export function AppHeader({ isAdmin }: { isAdmin: boolean }) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard">Tableau de bord</Link>
           </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/dashboard/panier">Panier / Simulation</Link>
+          </Button>
           {isAdmin && (
             <>
               <Button asChild variant="ghost" size="sm">
