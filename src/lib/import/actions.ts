@@ -35,6 +35,14 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
       dpe_grade: row.dpe_grade,
       status: row.status,
       is_annex: row.is_annex,
+      postal_code: row.postal_code,
+      city: row.city,
+      door: row.door,
+      usage_type: row.usage_type,
+      dpe_kwh_ep: row.dpe_kwh_ep,
+      ges_grade: row.ges_grade,
+      dpe_date: row.dpe_date,
+      ges_co2_m2: row.ges_co2_m2,
     }));
 
     const { data: properties, error: propertyError } = await supabase
@@ -63,6 +71,8 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
           deposit: row.deposit,
           lease_seniority_months: row.lease_seniority_months,
           notice_in_progress: row.notice_in_progress,
+          annual_rent_ttc: row.annual_rent_ttc,
+          rent_ttc_per_sqm_hab: row.rent_ttc_per_sqm_hab,
         };
       })
       .filter((row): row is NonNullable<typeof row> => Boolean(row));

@@ -85,6 +85,16 @@ const COLUMN_LABELS: Record<string, string> = {
   gross_yield: 'Rent. brute',
   net_yield: 'Rent. nette',
   dpe_grade: 'DPE',
+  ges_grade: 'GES',
+  dpe_kwh_ep: 'Conso (kWhEP)',
+  ges_co2_m2: 'GES (CO₂/m²)',
+  dpe_date: 'Date DPE',
+  annual_rent_ttc: 'Loyer/an TTC',
+  rent_ttc_per_sqm_hab: 'Loyer TTC/m²',
+  usage_type: 'Usage',
+  door: 'Porte',
+  postal_code: 'CP',
+  city: 'Ville',
   address: 'Adresse',
 };
 
@@ -92,6 +102,16 @@ const COLUMN_LABELS: Record<string, string> = {
 const DEFAULT_HIDDEN: VisibilityState = {
   total_cost: false,
   address: false,
+  ges_grade: false,
+  dpe_kwh_ep: false,
+  ges_co2_m2: false,
+  dpe_date: false,
+  annual_rent_ttc: false,
+  rent_ttc_per_sqm_hab: false,
+  usage_type: false,
+  door: false,
+  postal_code: false,
+  city: false,
 };
 
 export function PropertiesTable({
@@ -413,6 +433,62 @@ export function PropertiesTable({
         accessorKey: 'dpe_grade',
         header: 'DPE',
         cell: ({ row }) => row.original.dpe_grade ?? '—',
+      },
+      {
+        accessorKey: 'ges_grade',
+        header: 'GES',
+        cell: ({ row }) => row.original.ges_grade ?? '—',
+      },
+      {
+        accessorKey: 'dpe_kwh_ep',
+        header: 'Conso (kWhEP)',
+        cell: ({ row }) =>
+          row.original.dpe_kwh_ep != null ? formatNumber(row.original.dpe_kwh_ep, 0) : '—',
+      },
+      {
+        accessorKey: 'ges_co2_m2',
+        header: 'GES (CO₂/m²)',
+        cell: ({ row }) =>
+          row.original.ges_co2_m2 != null ? formatNumber(row.original.ges_co2_m2, 1) : '—',
+      },
+      {
+        accessorKey: 'dpe_date',
+        header: 'Date DPE',
+        cell: ({ row }) => row.original.dpe_date ?? '—',
+      },
+      {
+        accessorKey: 'annual_rent_ttc',
+        header: 'Loyer/an TTC',
+        cell: ({ row }) =>
+          row.original.annual_rent_ttc != null ? formatCurrency(row.original.annual_rent_ttc) : '—',
+      },
+      {
+        accessorKey: 'rent_ttc_per_sqm_hab',
+        header: 'Loyer TTC/m²',
+        cell: ({ row }) =>
+          row.original.rent_ttc_per_sqm_hab != null
+            ? formatEuroPerSqm(row.original.rent_ttc_per_sqm_hab, 1)
+            : '—',
+      },
+      {
+        accessorKey: 'usage_type',
+        header: 'Usage',
+        cell: ({ row }) => row.original.usage_type ?? '—',
+      },
+      {
+        accessorKey: 'door',
+        header: 'Porte',
+        cell: ({ row }) => row.original.door ?? '—',
+      },
+      {
+        accessorKey: 'postal_code',
+        header: 'CP',
+        cell: ({ row }) => row.original.postal_code ?? '—',
+      },
+      {
+        accessorKey: 'city',
+        header: 'Ville',
+        cell: ({ row }) => row.original.city ?? '—',
       },
       {
         accessorKey: 'address',

@@ -18,6 +18,7 @@ import {
   parseOptionalInt,
   parseOptionalNumber,
   parseSecondaryLotRefs,
+  toIsoDate,
 } from '@/lib/import/parse-utils';
 import type { ImportParseResult } from '@/lib/import/types';
 
@@ -110,6 +111,16 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
         buildingCode,
       ),
       designation,
+      postal_code: getCell(row, headerMap, 'postal_code') || null,
+      city: getCell(row, headerMap, 'city') || null,
+      door: getCell(row, headerMap, 'door') || null,
+      usage_type: getCell(row, headerMap, 'usage') || null,
+      dpe_kwh_ep: parseOptionalNumber(getCell(row, headerMap, 'dpe_kwh_ep')),
+      ges_grade: getCell(row, headerMap, 'ges_grade') || null,
+      dpe_date: toIsoDate(getCell(row, headerMap, 'dpe_date')),
+      ges_co2_m2: parseOptionalNumber(getCell(row, headerMap, 'ges_co2_m2')),
+      annual_rent_ttc: parseOptionalNumber(getCell(row, headerMap, 'annual_rent_ttc')),
+      rent_ttc_per_sqm_hab: parseOptionalNumber(getCell(row, headerMap, 'rent_ttc_per_sqm_hab')),
     });
   }
 

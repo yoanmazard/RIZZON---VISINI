@@ -19,6 +19,17 @@ export type CleanLotImportRow = {
   notice_in_progress: boolean;
   linked_annex_refs: string[];
   designation: string | null;
+  // Champs additionnels de l'état locatif (stockés sur properties / financials)
+  postal_code: string | null;
+  city: string | null;
+  door: string | null;
+  usage_type: string | null;
+  dpe_kwh_ep: number | null;
+  ges_grade: string | null;
+  dpe_date: string | null;
+  ges_co2_m2: number | null;
+  annual_rent_ttc: number | null;
+  rent_ttc_per_sqm_hab: number | null;
 };
 
 export type ImportPreviewRow = CleanLotImportRow & {
@@ -56,6 +67,16 @@ export type PropertyOverview = {
   deposit: number | null;
   lease_seniority_months: number | null;
   notice_in_progress: boolean | null;
+  postal_code: string | null;
+  city: string | null;
+  door: string | null;
+  usage_type: string | null;
+  dpe_kwh_ep: number | null;
+  ges_grade: string | null;
+  dpe_date: string | null;
+  ges_co2_m2: number | null;
+  annual_rent_ttc: number | null;
+  rent_ttc_per_sqm_hab: number | null;
   created_at: string;
   updated_at: string;
 };

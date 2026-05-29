@@ -47,6 +47,16 @@ export function parseDate(value: string) {
   return new Date(iso);
 }
 
+/** Convertit une date « jj/mm/aaaa » (ou ISO) en « aaaa-mm-jj » pour Postgres, sinon null. */
+export function toIsoDate(value: string): string | null {
+  const date = parseDate(value);
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function computeLeaseSeniorityMonths(startValue: string) {
   const startDate = parseDate(startValue);
   if (!startDate) return null;
