@@ -79,6 +79,7 @@ export type PropertyOverview = {
   ges_co2_m2: number | null;
   annual_rent_ttc: number | null;
   rent_ttc_per_sqm_hab: number | null;
+  for_sale: boolean | null;
   created_at: string;
   updated_at: string;
 };

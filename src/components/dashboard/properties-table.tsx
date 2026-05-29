@@ -26,6 +26,7 @@ import { calculateProfitability, parseMoneyInput } from '@/lib/calculations/rent
 import { perSqm } from '@/lib/calculations/kpi';
 import { simulationToFormValues } from '@/lib/simulations/types';
 import { saveIndividualSimulation } from '@/lib/simulations/actions';
+import { setPropertyForSale } from '@/lib/properties/actions';
 import { useDeliation } from '@/lib/deliation/context';
 import {
   formatCurrency,
@@ -84,6 +85,7 @@ const COLUMN_LABELS: Record<string, string> = {
   total_cost: 'Coût revient',
   gross_yield: 'Rent. brute',
   net_yield: 'Rent. nette',
+  for_sale: 'En vente',
   dpe_grade: 'DPE',
   ges_grade: 'GES',
   dpe_kwh_ep: 'Conso (kWhEP)',
@@ -131,6 +133,7 @@ export function PropertiesTable({
   const [categoryFilter, setCategoryFilter] = useState<
     'all' | 'dwelling_with_annex' | 'unlinked_annex' | 'vacant_annex'
   >('all');
+  const [saleFilter, setSaleFilter] = useState<'all' | 'for_sale' | 'not_for_sale'>('all');
   const [expanded, setExpanded] = useState<ExpandedState>(true);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(DEFAULT_HIDDEN);
@@ -203,6 +206,9 @@ export function PropertiesTable({
       if (categoryFilter === 'vacant_annex' && !(row.is_annex && row.status === 'Vacant')) {
         return false;
       }
+
+      if (saleFilter === 'for_sale' && !row.for_sale) return false;
+      if (saleFilter === 'not_for_sale' && row.for_sale) return false;
       return true;
     }
 
@@ -219,7 +225,7 @@ export function PropertiesTable({
     }
 
     return walk(rows);
-  }, [rows, statusFilter, buildingFilter, typeFilter, dpeFilter, categoryFilter]);
+  }, [rows, statusFilter, buildingFilter, typeFilter, dpeFilter, categoryFilter, saleFilter]);
 
   const columns = useMemo<ColumnDef<PropertyTreeRow>[]>(
     () => [
@@ -446,6 +452,18 @@ export function PropertiesTable({
         },
       },
       {
+        id: 'for_sale',
+        header: 'En vente',
+        accessorFn: (row) => (row.for_sale ? 1 : 0),
+        cell: ({ row }) => (
+          <ForSaleToggle
+            propertyId={row.original.id}
+            value={Boolean(row.original.for_sale)}
+            onChanged={onSimulationSaved}
+          />
+        ),
+      },
+      {
         accessorKey: 'dpe_grade',
         header: 'DPE',
         cell: ({ row }) => row.original.dpe_grade ?? '—',
@@ -621,6 +639,11 @@ export function PropertiesTable({
               <option value="dwelling_with_annex">Logements avec place/garage</option>
               <option value="unlinked_annex">Places/garages non liés</option>
               <option value="vacant_annex">Places/garages vacants</option>
+            </FilterSelect>
+            <FilterSelect value={saleFilter} onChange={(v) => setSaleFilter(v as typeof saleFilter)}>
+              <option value="all">Vente : tous</option>
+              <option value="for_sale">En vente</option>
+              <option value="not_for_sale">Pas en vente</option>
             </FilterSelect>
           </div>
 
@@ -848,6 +871,43 @@ function EditableMoneyCell({
       />
       {saved && <span className="text-xs text-emerald-600">✓</span>}
     </div>
+  );
+}
+
+function ForSaleToggle({
+  propertyId,
+  value,
+  onChanged,
+}: {
+  propertyId: string;
+  value: boolean;
+  onChanged?: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function toggle(next: boolean) {
+    setBusy(true);
+    const result = await setPropertyForSale(propertyId, next);
+    setBusy(false);
+    if (result.ok) onChanged?.();
+  }
+
+  return (
+    <label
+      className="flex items-center gap-1.5"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <input
+        type="checkbox"
+        checked={value}
+        disabled={busy}
+        onChange={(event) => toggle(event.target.checked)}
+        aria-label="Marquer en vente"
+      />
+      {value && (
+        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">Vente</span>
+      )}
+    </label>
   );
 }
 
