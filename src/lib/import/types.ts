@@ -19,6 +19,8 @@ export type CleanLotImportRow = {
   notice_in_progress: boolean;
   linked_annex_refs: string[];
   designation: string | null;
+  // Identifiant locataire (transitoire : regroupement des lots liés, non stocké en base)
+  tenant_group: string | null;
   // Champs additionnels de l'état locatif (stockés sur properties / financials)
   postal_code: string | null;
   city: string | null;

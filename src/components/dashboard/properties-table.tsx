@@ -128,7 +128,9 @@ export function PropertiesTable({
   const [buildingFilter, setBuildingFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dpeFilter, setDpeFilter] = useState('all');
-  const [annexFilter, setAnnexFilter] = useState<'all' | 'with' | 'annex' | 'lot'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<
+    'all' | 'dwelling_with_annex' | 'unlinked_annex' | 'vacant_annex'
+  >('all');
   const [expanded, setExpanded] = useState<ExpandedState>(true);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(DEFAULT_HIDDEN);
@@ -184,9 +186,23 @@ export function PropertiesTable({
       if (buildingFilter !== 'all' && row.building_name !== buildingFilter) return false;
       if (typeFilter !== 'all' && row.main_type !== typeFilter) return false;
       if (dpeFilter !== 'all' && row.dpe_grade !== dpeFilter) return false;
-      if (annexFilter === 'annex' && !row.is_annex) return false;
-      if (annexFilter === 'lot' && row.is_annex) return false;
-      if (annexFilter === 'with' && !(row.subRows && row.subRows.length > 0)) return false;
+
+      const hasAnnexes = !row.is_annex && (row.subRows?.length ?? 0) > 0;
+      if (
+        categoryFilter === 'dwelling_with_annex' &&
+        !(hasAnnexes || row.depth > 0) // logement avec annexes + ses annexes imbriquées
+      ) {
+        return false;
+      }
+      if (
+        categoryFilter === 'unlinked_annex' &&
+        !(row.is_annex && row.depth === 0 && row.status !== 'Vacant')
+      ) {
+        return false;
+      }
+      if (categoryFilter === 'vacant_annex' && !(row.is_annex && row.status === 'Vacant')) {
+        return false;
+      }
       return true;
     }
 
@@ -203,7 +219,7 @@ export function PropertiesTable({
     }
 
     return walk(rows);
-  }, [rows, statusFilter, buildingFilter, typeFilter, dpeFilter, annexFilter]);
+  }, [rows, statusFilter, buildingFilter, typeFilter, dpeFilter, categoryFilter]);
 
   const columns = useMemo<ColumnDef<PropertyTreeRow>[]>(
     () => [
@@ -597,11 +613,14 @@ export function PropertiesTable({
                 </option>
               ))}
             </FilterSelect>
-            <FilterSelect value={annexFilter} onChange={(v) => setAnnexFilter(v as typeof annexFilter)}>
-              <option value="all">Lots & annexes</option>
-              <option value="lot">Lots principaux</option>
-              <option value="annex">Annexes</option>
-              <option value="with">Avec annexe(s)</option>
+            <FilterSelect
+              value={categoryFilter}
+              onChange={(v) => setCategoryFilter(v as typeof categoryFilter)}
+            >
+              <option value="all">Toutes catégories</option>
+              <option value="dwelling_with_annex">Logements avec place/garage</option>
+              <option value="unlinked_annex">Places/garages non liés</option>
+              <option value="vacant_annex">Places/garages vacants</option>
             </FilterSelect>
           </div>
 

@@ -6,40 +6,57 @@ export type LotLinkInsert = {
   link_source: 'auto';
 };
 
-export function buildAutoLotLinks(rows: Array<{ ref_lot: string; is_annex: boolean; linked_annex_refs: string[] }>): LotLinkInsert[] {
+type LinkableRow = {
+  ref_lot: string;
+  is_annex: boolean;
+  linked_annex_refs: string[];
+  tenant_group?: string | null;
+};
+
+/**
+ * Reconstruit les liens logement ↔ annexes selon deux signaux complémentaires :
+ *  1) le locataire (même « Code unique » → ses annexes rattachées à son logement) ;
+ *  2) la colonne « N° lot secondaire » déclarée sur le logement.
+ * Chaque annexe n'est rattachée qu'à un seul logement (priorité au locataire).
+ */
+export function buildAutoLotLinks(rows: LinkableRow[]): LotLinkInsert[] {
   const refs = new Set(rows.map((row) => row.ref_lot));
   const links = new Map<string, LotLinkInsert>();
+  const linkedAnnex = new Set<string>();
 
+  const add = (primaryRef: string, annexRef: string) => {
+    if (primaryRef === annexRef || linkedAnnex.has(annexRef) || !refs.has(annexRef)) return;
+    links.set(`${primaryRef}::${annexRef}`, {
+      primary_ref: primaryRef,
+      annex_ref: annexRef,
+      link_source: 'auto',
+    });
+    linkedAnnex.add(annexRef);
+  };
+
+  // 1) Par locataire : annexes d'un même locataire rattachées à son logement.
+  const byTenant = new Map<string, LinkableRow[]>();
   for (const row of rows) {
-    if (row.is_annex) continue;
+    const tenant = (row.tenant_group ?? '').trim();
+    if (!tenant) continue;
+    const list = byTenant.get(tenant) ?? [];
+    list.push(row);
+    byTenant.set(tenant, list);
+  }
 
-    for (const annexRef of row.linked_annex_refs) {
-      if (!refs.has(annexRef)) continue;
-
-      const key = `${row.ref_lot}::${annexRef}`;
-      links.set(key, {
-        primary_ref: row.ref_lot,
-        annex_ref: annexRef,
-        link_source: 'auto',
-      });
+  for (const group of byTenant.values()) {
+    const primary = group.find((row) => !row.is_annex);
+    if (!primary) continue;
+    for (const annex of group) {
+      if (annex.is_annex) add(primary.ref_lot, annex.ref_lot);
     }
   }
 
+  // 2) Par « N° lot secondaire » déclaré sur le logement (complément).
   for (const row of rows) {
-    if (!row.is_annex) continue;
-
-    const parents = rows.filter(
-      (candidate) =>
-        !candidate.is_annex && candidate.linked_annex_refs.includes(row.ref_lot),
-    );
-
-    for (const parent of parents) {
-      const key = `${parent.ref_lot}::${row.ref_lot}`;
-      links.set(key, {
-        primary_ref: parent.ref_lot,
-        annex_ref: row.ref_lot,
-        link_source: 'auto',
-      });
+    if (row.is_annex) continue;
+    for (const annexRef of row.linked_annex_refs) {
+      add(row.ref_lot, annexRef);
     }
   }
 

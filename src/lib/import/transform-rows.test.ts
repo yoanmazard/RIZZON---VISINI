@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildHeaderMap, getCell } from '@/lib/import/column-mapping';
 import { buildRefLot, determineStatus, parseSecondaryLotRefs } from '@/lib/import/parse-utils';
 import { transformCsvRows } from '@/lib/import/transform-rows';
+import { buildAutoLotLinks } from '@/lib/import/lot-links';
 
 describe('buildRefLot', () => {
   it('préfixe le n° lot avec le code immeuble (Etat locatif)', () => {
@@ -56,5 +57,34 @@ describe('transformCsvRows — Etat locatif', () => {
     expect(result.rows[0]?.net_rent).toBe(660.18);
     expect(result.rows[0]?.linked_annex_refs).toEqual(['LESPORT1-209']);
     expect(result.rows[0]?.building_name).toBe("LES PORTES D'ANNECY");
+  });
+});
+
+describe('buildAutoLotLinks', () => {
+  it('rattache les annexes du même locataire à son logement', () => {
+    const links = buildAutoLotLinks([
+      { ref_lot: 'A-1', is_annex: false, linked_annex_refs: [], tenant_group: 'COCHE1' },
+      { ref_lot: 'A-2', is_annex: true, linked_annex_refs: [], tenant_group: 'COCHE1' },
+      { ref_lot: 'B-9', is_annex: true, linked_annex_refs: [], tenant_group: 'DUPONT1' },
+      { ref_lot: 'C-5', is_annex: true, linked_annex_refs: [], tenant_group: null },
+    ]);
+    expect(links).toEqual([{ primary_ref: 'A-1', annex_ref: 'A-2', link_source: 'auto' }]);
+  });
+
+  it('complète via la colonne N° lot secondaire', () => {
+    const links = buildAutoLotLinks([
+      { ref_lot: 'A-1', is_annex: false, linked_annex_refs: ['A-3'], tenant_group: null },
+      { ref_lot: 'A-3', is_annex: true, linked_annex_refs: [], tenant_group: null },
+    ]);
+    expect(links).toEqual([{ primary_ref: 'A-1', annex_ref: 'A-3', link_source: 'auto' }]);
+  });
+
+  it('ne rattache une annexe qu’à un seul logement (priorité locataire)', () => {
+    const links = buildAutoLotLinks([
+      { ref_lot: 'A-1', is_annex: false, linked_annex_refs: ['A-2'], tenant_group: 'T1' },
+      { ref_lot: 'A-2', is_annex: true, linked_annex_refs: [], tenant_group: 'T1' },
+      { ref_lot: 'A-9', is_annex: false, linked_annex_refs: ['A-2'], tenant_group: 'T2' },
+    ]);
+    expect(links).toEqual([{ primary_ref: 'A-1', annex_ref: 'A-2', link_source: 'auto' }]);
   });
 });

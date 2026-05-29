@@ -76,7 +76,13 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
       null;
     const status = determineStatus(row, headerMap);
     const tenantRaw = getCell(row, headerMap, 'tenant_raw');
-    const tenantLabel = pseudonymizer.labelFor(tenantRaw, status);
+    const tenantCode = getCell(row, headerMap, 'tenant_code');
+    // Clé locataire : le code locataire (ex. « COCHE1 ») si présent, sinon le nom.
+    const tenantKey = tenantCode || tenantRaw;
+    const tenantLabel = pseudonymizer.labelFor(tenantKey, status);
+    // Regroupement des lots d'un même locataire (vide si vacant / sans locataire).
+    const tenantGroup =
+      status === 'Loué' && tenantKey && !isVacantTenant(tenantKey) ? tenantKey.trim() : null;
 
     const surface =
       parseOptionalNumber(getCell(row, headerMap, 'surface_habitable')) ??
@@ -111,6 +117,7 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
         buildingCode,
       ),
       designation,
+      tenant_group: tenantGroup,
       postal_code: getCell(row, headerMap, 'postal_code') || null,
       city: getCell(row, headerMap, 'city') || null,
       door: getCell(row, headerMap, 'door') || null,
