@@ -22,8 +22,10 @@ import type { DashboardStats } from '@/lib/dashboard/queries';
 import type { SimulationRecord } from '@/lib/simulations/types';
 import type { ScenarioRecord } from '@/lib/basket/types';
 import { flattenPropertyTree } from '@/lib/deliation/groups';
-import { calculateProfitability } from '@/lib/calculations/rentability';
+import { calculateProfitability, parseMoneyInput } from '@/lib/calculations/rentability';
 import { perSqm } from '@/lib/calculations/kpi';
+import { simulationToFormValues } from '@/lib/simulations/types';
+import { saveIndividualSimulation } from '@/lib/simulations/actions';
 import { useDeliation } from '@/lib/deliation/context';
 import {
   formatCurrency,
@@ -72,6 +74,7 @@ const COLUMN_LABELS: Record<string, string> = {
   linkBadge: 'Lien',
   tenant_label: 'Locataire',
   net_rent: 'Loyer HC',
+  target_rent: 'Loyer cible',
   rent_per_sqm: 'Loyer/m²',
   rental_charges: 'Charges',
   deposit: 'DDG',
@@ -312,6 +315,23 @@ export function PropertiesTable({
         cell: ({ row }) => formatCurrency(row.original.net_rent),
       },
       {
+        id: 'target_rent',
+        header: 'Loyer cible',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <EditableMoneyCell
+            propertyId={row.original.id}
+            sim={simulationsByProperty[row.original.id]}
+            netRent={row.original.net_rent}
+            field="targetRent"
+            initial={
+              simulationsByProperty[row.original.id]?.target_rent ?? row.original.net_rent ?? null
+            }
+            onSaved={onSimulationSaved}
+          />
+        ),
+      },
+      {
         id: 'rent_per_sqm',
         header: 'Loyer/m²',
         accessorFn: (row) => perSqm(row.net_rent, row.surface) ?? -1,
@@ -338,11 +358,17 @@ export function PropertiesTable({
       {
         id: 'target_price',
         header: 'Prix cible',
-        accessorFn: (row) => metricsById.get(row.id)?.purchasePrice ?? 0,
-        cell: ({ row }) => {
-          const price = metricsById.get(row.original.id)?.purchasePrice ?? 0;
-          return price > 0 ? formatCurrency(price) : '—';
-        },
+        enableSorting: false,
+        cell: ({ row }) => (
+          <EditableMoneyCell
+            propertyId={row.original.id}
+            sim={simulationsByProperty[row.original.id]}
+            netRent={row.original.net_rent}
+            field="targetPurchasePrice"
+            initial={simulationsByProperty[row.original.id]?.target_purchase_price ?? null}
+            onSaved={onSimulationSaved}
+          />
+        ),
       },
       {
         id: 'price_per_sqm',
@@ -396,7 +422,7 @@ export function PropertiesTable({
         cell: ({ row }) => row.original.address ?? '—',
       },
     ],
-    [metricsById, isDeliated],
+    [metricsById, isDeliated, simulationsByProperty, onSimulationSaved],
   );
 
   const table = useReactTable({
@@ -653,6 +679,59 @@ export function PropertiesTable({
         onScenarioSaved={onSimulationSaved}
       />
     </div>
+  );
+}
+
+function EditableMoneyCell({
+  propertyId,
+  sim,
+  netRent,
+  field,
+  initial,
+  onSaved,
+}: {
+  propertyId: string;
+  sim: SimulationRecord | undefined;
+  netRent: number | null;
+  field: 'targetPurchasePrice' | 'targetRent';
+  initial: number | null;
+  onSaved?: () => void;
+}) {
+  const initialStr = initial != null ? String(initial) : '';
+  const [value, setValue] = useState(initialStr);
+  const [saving, setSaving] = useState(false);
+
+  // Resynchronise quand la donnée serveur change (après refresh).
+  useEffect(() => {
+    setValue(initialStr);
+  }, [initialStr]);
+
+  async function commit() {
+    const parsed = value.trim() === '' ? null : parseMoneyInput(value);
+    if (parsed === (initial ?? null)) return; // inchangé
+    const base = simulationToFormValues(sim, netRent);
+    const values = { ...base, [field]: value.trim() };
+    setSaving(true);
+    const result = await saveIndividualSimulation(propertyId, values);
+    setSaving(false);
+    if (result.ok) onSaved?.();
+  }
+
+  return (
+    <input
+      value={value}
+      inputMode="decimal"
+      disabled={saving}
+      onClick={(event) => event.stopPropagation()}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
+        if (event.key === 'Escape') setValue(initialStr);
+      }}
+      className="h-8 w-28 rounded-md border border-input bg-background px-2 text-sm"
+      placeholder="—"
+    />
   );
 }
 

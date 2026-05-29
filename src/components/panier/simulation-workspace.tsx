@@ -1,17 +1,21 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ShoppingCart, Save, Trash2, Unlink, Link2, Scale, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Save, Trash2, Unlink, Link2, Scale, X, RotateCcw } from 'lucide-react';
 import type { PropertyTreeRow } from '@/lib/import/types';
-import type { SimulationRecord } from '@/lib/simulations/types';
+import type { SimulationRecord, SimulationFormValues } from '@/lib/simulations/types';
+import { simulationToFormValues } from '@/lib/simulations/types';
 import type { BasketSummary, ScenarioRecord } from '@/lib/basket/types';
 import { computeBasketSummary, inferScenarioMode } from '@/lib/basket/compute-basket';
-import { calculateProfitability } from '@/lib/calculations/rentability';
+import { calculateProfitability, parseMoneyInput } from '@/lib/calculations/rentability';
 import { perSqm } from '@/lib/calculations/kpi';
-import { useDeliation } from '@/lib/deliation/context';
+import { DeliationProvider, useDeliation } from '@/lib/deliation/context';
+import { DeliationModal } from '@/components/dashboard/deliation-modal';
 import { flattenPropertyTree, findLinkGroup } from '@/lib/deliation/groups';
 import { createDeliationGroupState } from '@/lib/deliation/ventilation';
 import { saveScenario, deleteScenario } from '@/lib/scenarios/actions';
+import { saveSimulationsBatch } from '@/lib/simulations/actions';
 import { readBasketSelection, writeBasketSelection } from '@/lib/basket/selection-storage';
 import { ExportLotsButton } from '@/components/dashboard/export-lots-button';
 import {
@@ -38,8 +42,86 @@ type Props = {
   scenarios: ScenarioRecord[];
 };
 
+/** Hypothèses éditées à la volée (chaînes saisies, non encore enregistrées). */
+type Override = { targetPurchasePrice?: string; targetRent?: string };
+type Overrides = Record<string, Override>;
+
+function applyOverride(
+  saved: SimulationRecord | undefined,
+  override: Override,
+  propertyId: string,
+): SimulationRecord {
+  const base: SimulationRecord = saved ?? {
+    id: '',
+    property_id: propertyId,
+    target_purchase_price: null,
+    target_rent: null,
+    target_resale_price: null,
+    estimated_works: null,
+    notary_fee_rate: null,
+    annual_property_tax: null,
+    non_recoverable_charges: null,
+    vacancy_rate: null,
+    mgmt_fee_rate: null,
+  };
+
+  return {
+    ...base,
+    property_id: propertyId,
+    target_purchase_price:
+      override.targetPurchasePrice !== undefined
+        ? parseMoneyOrNull(override.targetPurchasePrice)
+        : base.target_purchase_price,
+    target_rent:
+      override.targetRent !== undefined
+        ? parseMoneyOrNull(override.targetRent)
+        : base.target_rent,
+  };
+}
+
+function parseMoneyOrNull(value: string): number | null {
+  if (!value.trim()) return null;
+  return parseMoneyInput(value);
+}
+
 export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios }: Props) {
+  const [overrides, setOverrides] = useState<Overrides>({});
+
+  // Hypothèses effectives = enregistrées + éditions en cours → alimentent tous les calculs.
+  const effectiveSims = useMemo(() => {
+    const map: Record<string, SimulationRecord> = { ...simulationsByProperty };
+    for (const [id, override] of Object.entries(overrides)) {
+      map[id] = applyOverride(simulationsByProperty[id], override, id);
+    }
+    return map;
+  }, [simulationsByProperty, overrides]);
+
+  return (
+    <DeliationProvider treeRows={treeRows} simulationsByProperty={effectiveSims}>
+      <WorkspaceInner
+        treeRows={treeRows}
+        savedSims={simulationsByProperty}
+        scenarios={scenarios}
+        overrides={overrides}
+        setOverrides={setOverrides}
+      />
+      <DeliationModal />
+    </DeliationProvider>
+  );
+}
+
+type InnerProps = {
+  treeRows: PropertyTreeRow[];
+  savedSims: Record<string, SimulationRecord>;
+  scenarios: ScenarioRecord[];
+  overrides: Overrides;
+  setOverrides: React.Dispatch<React.SetStateAction<Overrides>>;
+};
+
+function WorkspaceInner({ treeRows, savedSims, scenarios, overrides, setOverrides }: InnerProps) {
+  const router = useRouter();
   const {
+    simulationsByProperty: effSims,
     deliationGroups,
     getEffectiveCalculationInputs,
     replaceDeliationGroups,
@@ -57,8 +139,10 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPersisting, setIsPersisting] = useState(false);
 
-  // Récupère la sélection cochée dans le tableau de bord.
+  const dirty = Object.keys(overrides).length > 0;
+
   useEffect(() => {
     const initial = readBasketSelection().filter((id) => byId.has(id));
     if (initial.length > 0) setSelectedIds(new Set(initial));
@@ -86,16 +170,36 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
     replaceDeliationGroups({});
   }
 
+  function setOverride(id: string, field: keyof Override, value: string) {
+    setOverrides((current) => ({
+      ...current,
+      [id]: { ...current[id], [field]: value },
+    }));
+  }
+
+  function inputValue(id: string, field: keyof Override): string {
+    const override = overrides[id];
+    if (override && override[field] !== undefined) return override[field] as string;
+    const saved = savedSims[id];
+    if (field === 'targetPurchasePrice') {
+      return saved?.target_purchase_price != null ? String(saved.target_purchase_price) : '';
+    }
+    // loyer cible : par défaut le loyer actuel si aucune hypothèse enregistrée
+    if (saved?.target_rent != null) return String(saved.target_rent);
+    const row = byId.get(id);
+    return row?.net_rent != null ? String(row.net_rent) : '';
+  }
+
   const summary = useMemo(
     () =>
       computeBasketSummary({
         selectedIds,
         treeRows,
-        simulationsByProperty,
+        simulationsByProperty: effSims,
         deliationGroups,
         getEffectiveCalculationInputs,
       }),
-    [selectedIds, treeRows, simulationsByProperty, deliationGroups, getEffectiveCalculationInputs],
+    [selectedIds, treeRows, effSims, deliationGroups, getEffectiveCalculationInputs],
   );
 
   const selectedRows = useMemo(
@@ -121,7 +225,7 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
     return computeBasketSummary({
       selectedIds: new Set(scenario.property_ids),
       treeRows,
-      simulationsByProperty,
+      simulationsByProperty: effSims,
       deliationGroups: buildScenarioGroups(scenario),
       getEffectiveCalculationInputs,
     });
@@ -134,25 +238,51 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
     setError(null);
   }
 
-  async function handleSave() {
+  async function persistOverrides() {
+    const entries = Object.keys(overrides).map((id) => {
+      const row = byId.get(id);
+      const base = simulationToFormValues(savedSims[id], row?.net_rent ?? null);
+      const override = overrides[id];
+      const values: SimulationFormValues = {
+        ...base,
+        targetPurchasePrice:
+          override.targetPurchasePrice !== undefined
+            ? override.targetPurchasePrice
+            : base.targetPurchasePrice,
+        targetRent: override.targetRent !== undefined ? override.targetRent : base.targetRent,
+      };
+      return { propertyId: id, values };
+    });
+
+    setIsPersisting(true);
+    setError(null);
+    setMessage(null);
+    const result = await saveSimulationsBatch(entries);
+    setIsPersisting(false);
+
+    if (!result.ok) {
+      setError(result.message);
+      return;
+    }
+    setOverrides({});
+    setMessage(result.message);
+    router.refresh();
+  }
+
+  async function handleSaveScenario() {
     if (!summary) return;
     setIsSaving(true);
     setError(null);
     setMessage(null);
-
-    const result = await saveScenario(
-      scenarioName,
-      [...selectedIds],
-      inferScenarioMode(summary),
-    );
+    const result = await saveScenario(scenarioName, [...selectedIds], inferScenarioMode(summary));
     setIsSaving(false);
-
     if (!result.ok) {
       setError(result.message);
       return;
     }
     setScenarioName('');
     setMessage(result.message);
+    router.refresh();
   }
 
   async function handleDelete(scenarioId: string) {
@@ -162,6 +292,7 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
       return;
     }
     setMessage(result.message);
+    router.refresh();
   }
 
   function toggleCompare(id: string) {
@@ -176,7 +307,7 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
   const compareScenarios = scenarios.filter((scenario) => compareIds.has(scenario.id));
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+    <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
       {/* Sélecteur de lots */}
       <Card className="lg:sticky lg:top-24 lg:self-start">
         <CardHeader>
@@ -229,24 +360,34 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="text-base">
-                      Récapitulatif — mode {summary.mode}
-                    </CardTitle>
+                    <CardTitle className="text-base">Récapitulatif — mode {summary.mode}</CardTitle>
                     <CardDescription>
                       {summary.lotCount} lot(s) · {formatSurface(summary.totalSurface, 0)}
+                      {dirty && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                          modifications non enregistrées
+                        </span>
+                      )}
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                      placeholder="Nom du scénario"
-                      value={scenarioName}
-                      onChange={(event) => setScenarioName(event.target.value)}
-                      className="h-9 w-44"
-                    />
-                    <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                      <Save className="mr-2 h-4 w-4" />
-                      {isSaving ? 'Sauvegarde…' : 'Sauvegarder'}
-                    </Button>
+                    {dirty && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setOverrides({})}
+                          disabled={isPersisting}
+                        >
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Annuler
+                        </Button>
+                        <Button size="sm" onClick={persistOverrides} disabled={isPersisting}>
+                          <Save className="mr-2 h-4 w-4" />
+                          {isPersisting ? 'Enregistrement…' : 'Enregistrer les hypothèses'}
+                        </Button>
+                      </>
+                    )}
                     <ExportLotsButton
                       properties={selectedRows}
                       scenarioName={scenarioName || `Panier ${summary.mode}`}
@@ -282,19 +423,20 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                 </div>
                 {summary.mode === 'délié' && (
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Stratégie déliée : au moins un groupe appartement/annexe est traité séparément
-                    (annexe non cochée ou déliation active). Totaux ajustés automatiquement.
+                    Stratégie déliée : au moins un groupe appartement/annexe est traité séparément.
+                    Totaux ajustés automatiquement.
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Détail par lot */}
+            {/* Détail par lot — éditable */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Détail par lot</CardTitle>
                 <CardDescription>
-                  Rentabilités calculées à partir des hypothèses enregistrées sur chaque fiche lot.
+                  Ajustez <strong>prix cible</strong> et <strong>loyer cible</strong> : les totaux se
+                  recalculent en direct. Pensez à enregistrer.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -307,9 +449,9 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                           'Type',
                           'Mode',
                           'Surface',
-                          'Prix cible',
+                          'Prix cible (€)',
                           'Prix/m²',
-                          'Loyer cible',
+                          'Loyer cible (€)',
                           'Loyer/m²',
                           'Coût revient',
                           'Brute',
@@ -325,10 +467,7 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                     </thead>
                     <tbody>
                       {selectedRows.map((row) => {
-                        const inputs = getEffectiveCalculationInputs(
-                          row,
-                          simulationsByProperty[row.id],
-                        );
+                        const inputs = getEffectiveCalculationInputs(row, effSims[row.id]);
                         const m = calculateProfitability(inputs);
                         const group = findLinkGroup(row, treeRows);
                         const canDeliate = Boolean(
@@ -343,14 +482,22 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                               <ModeBadge deliated={deliated} linked={row.depth > 0} annex={row.is_annex} />
                             </td>
                             <td className="whitespace-nowrap px-3 py-2">{formatSurface(row.surface, 1)}</td>
-                            <td className="whitespace-nowrap px-3 py-2">
-                              {inputs.targetPurchasePrice > 0 ? formatCurrency(inputs.targetPurchasePrice) : '—'}
+                            <td className="px-2 py-1.5">
+                              <NumberInput
+                                value={inputValue(row.id, 'targetPurchasePrice')}
+                                onChange={(v) => setOverride(row.id, 'targetPurchasePrice', v)}
+                                disabled={deliated}
+                              />
                             </td>
                             <td className="whitespace-nowrap px-3 py-2">
                               {formatEuroPerSqm(perSqm(inputs.targetPurchasePrice, row.surface))}
                             </td>
-                            <td className="whitespace-nowrap px-3 py-2">
-                              {inputs.targetRent > 0 ? formatCurrency(inputs.targetRent) : '—'}
+                            <td className="px-2 py-1.5">
+                              <NumberInput
+                                value={inputValue(row.id, 'targetRent')}
+                                onChange={(v) => setOverride(row.id, 'targetRent', v)}
+                                disabled={deliated}
+                              />
                             </td>
                             <td className="whitespace-nowrap px-3 py-2">
                               {formatEuroPerSqm(perSqm(inputs.targetRent, row.surface), 1)}
@@ -370,20 +517,12 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                             <td className="whitespace-nowrap px-3 py-2">
                               {canDeliate &&
                                 (deliated ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => cancelDeliation(row.id)}
-                                  >
+                                  <Button variant="ghost" size="sm" onClick={() => cancelDeliation(row.id)}>
                                     <Link2 className="mr-1 h-3.5 w-3.5" />
                                     Relier
                                   </Button>
                                 ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openDeliationModal(row)}
-                                  >
+                                  <Button variant="ghost" size="sm" onClick={() => openDeliationModal(row)}>
                                     <Unlink className="mr-1 h-3.5 w-3.5" />
                                     Délier
                                   </Button>
@@ -395,6 +534,10 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
                     </tbody>
                   </table>
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Les hypothèses détaillées (travaux, taxe foncière, vacance, frais de gestion, revente)
+                  restent réglables dans la fiche lot du tableau de bord.
+                </p>
               </CardContent>
             </Card>
           </>
@@ -403,16 +546,32 @@ export function SimulationWorkspace({ treeRows, simulationsByProperty, scenarios
         {/* Scénarios sauvegardés + comparateur */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Scénarios sauvegardés</CardTitle>
-            <CardDescription>
-              Cliquez pour charger un scénario, ou cochez-en plusieurs pour les comparer.
-            </CardDescription>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base">Scénarios</CardTitle>
+                <CardDescription>
+                  Cliquez pour charger un scénario, ou cochez-en plusieurs pour comparer.
+                </CardDescription>
+              </div>
+              {summary && summary.lotCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Nom du scénario"
+                    value={scenarioName}
+                    onChange={(event) => setScenarioName(event.target.value)}
+                    className="h-9 w-44"
+                  />
+                  <Button size="sm" onClick={handleSaveScenario} disabled={isSaving}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSaving ? 'Sauvegarde…' : 'Sauvegarder la sélection'}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {scenarios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Aucun scénario enregistré pour l&apos;instant.
-              </p>
+              <p className="text-sm text-muted-foreground">Aucun scénario enregistré pour l&apos;instant.</p>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {scenarios.map((scenario) => {
@@ -547,6 +706,26 @@ const COMPARE_ROWS: { label: string; render: (s: BasketSummary | null) => string
   { label: 'Plus-value latente', render: (s) => (s ? formatCurrency(s.latentCapitalGain) : '—') },
 ];
 
+function NumberInput({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Input
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      inputMode="decimal"
+      disabled={disabled}
+      className="h-8 w-28"
+    />
+  );
+}
+
 function LotPick({
   row,
   checked,
@@ -584,17 +763,13 @@ function ModeBadge({
   annex: boolean;
 }) {
   if (deliated) {
-    return (
-      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-800">Délié</span>
-    );
+    return <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-800">Délié</span>;
   }
   if (linked) {
     return <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">Lié</span>;
   }
   if (annex) {
-    return (
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Indép.</span>
-    );
+    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Indép.</span>;
   }
   return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Lot</span>;
 }

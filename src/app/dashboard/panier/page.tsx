@@ -1,6 +1,4 @@
 import { getDashboardData, type DashboardData } from '@/lib/dashboard/queries';
-import { DeliationProvider } from '@/lib/deliation/context';
-import { DeliationModal } from '@/components/dashboard/deliation-modal';
 import { SimulationWorkspace } from '@/components/panier/simulation-workspace';
 
 const EMPTY: DashboardData = {
@@ -43,14 +41,11 @@ export default async function PanierPage() {
         </div>
       )}
 
-      <DeliationProvider treeRows={data.treeRows} simulationsByProperty={data.simulationsByProperty}>
-        <SimulationWorkspace
-          treeRows={data.treeRows}
-          simulationsByProperty={data.simulationsByProperty}
-          scenarios={data.scenarios}
-        />
-        <DeliationModal />
-      </DeliationProvider>
+      <SimulationWorkspace
+        treeRows={data.treeRows}
+        simulationsByProperty={data.simulationsByProperty}
+        scenarios={data.scenarios}
+      />
     </div>
   );
 }
