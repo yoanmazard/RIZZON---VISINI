@@ -4,7 +4,10 @@
 alter table public.properties
   add column if not exists for_sale boolean not null default false;
 
-create or replace view public.properties_overview
+-- DROP + CREATE (et non CREATE OR REPLACE) : on insère des colonnes au milieu de la
+-- vue, ce que REPLACE refuse (« cannot change name of view column »).
+drop view if exists public.properties_overview;
+create view public.properties_overview
 with (security_invoker = true)
 as
 select

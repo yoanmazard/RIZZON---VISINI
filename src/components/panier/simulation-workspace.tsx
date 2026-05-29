@@ -404,10 +404,10 @@ function WorkspaceInner({ treeRows, savedSims, scenarios, overrides, setOverride
                     value={formatEuroPerSqm(perSqm(summary.totalPurchasePrice, summary.totalSurface))}
                   />
                   <Stat label="Coût de revient" value={formatCurrency(summary.totalCost)} />
-                  <Stat label="Loyer HC actuel" value={formatCurrency(summary.currentRent)} />
-                  <Stat label="Loyer HC cible" value={formatCurrency(summary.targetRent)} />
+                  <Stat label="Loyer HC actuel /mois" value={formatCurrency(summary.currentRent)} />
+                  <Stat label="Loyer HC cible /mois" value={formatCurrency(summary.targetRent)} />
                   <Stat
-                    label="Loyer /m²"
+                    label="Loyer /m²/mois"
                     value={formatEuroPerSqm(perSqm(summary.targetRent, summary.totalSurface), 1)}
                   />
                   <Stat
@@ -451,8 +451,8 @@ function WorkspaceInner({ treeRows, savedSims, scenarios, overrides, setOverride
                           'Surface',
                           'Prix cible (€)',
                           'Prix/m²',
-                          'Loyer cible (€)',
-                          'Loyer/m²',
+                          'Loyer cible (€/mois)',
+                          'Loyer/m²/mois',
                           'Coût revient',
                           'Brute',
                           'Nette',
@@ -690,9 +690,9 @@ const COMPARE_ROWS: { label: string; render: (s: BasketSummary | null) => string
     render: (s) => (s ? formatEuroPerSqm(perSqm(s.totalPurchasePrice, s.totalSurface)) : '—'),
   },
   { label: 'Coût de revient', render: (s) => (s ? formatCurrency(s.totalCost) : '—') },
-  { label: 'Loyer HC cible', render: (s) => (s ? formatCurrency(s.targetRent) : '—') },
+  { label: 'Loyer HC cible /mois', render: (s) => (s ? formatCurrency(s.targetRent) : '—') },
   {
-    label: 'Loyer /m²',
+    label: 'Loyer /m²/mois',
     render: (s) => (s ? formatEuroPerSqm(perSqm(s.targetRent, s.totalSurface), 1) : '—'),
   },
   {

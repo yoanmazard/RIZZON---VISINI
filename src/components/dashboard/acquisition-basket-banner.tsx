@@ -171,9 +171,9 @@ export function AcquisitionBasketBanner({
             value={formatEuroPerSqm(perSqm(summary.totalPurchasePrice, summary.totalSurface))}
           />
           <Metric label="Coût de revient" value={formatCurrency(summary.totalCost)} />
-          <Metric label="Loyer HC cible" value={formatCurrency(summary.targetRent)} />
+          <Metric label="Loyer HC cible /mois" value={formatCurrency(summary.targetRent)} />
           <Metric
-            label="Loyer /m²"
+            label="Loyer /m²/mois"
             value={formatEuroPerSqm(perSqm(summary.targetRent, summary.totalSurface), 1)}
           />
           <Metric

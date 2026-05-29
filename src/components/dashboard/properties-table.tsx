@@ -74,9 +74,9 @@ const COLUMN_LABELS: Record<string, string> = {
   status: 'Statut',
   linkBadge: 'Lien',
   tenant_label: 'Locataire',
-  net_rent: 'Loyer HC',
-  target_rent: 'Loyer cible',
-  rent_per_sqm: 'Loyer/m²',
+  net_rent: 'Loyer HC /mois',
+  target_rent: 'Loyer cible /mois',
+  rent_per_sqm: 'Loyer/m²/mois',
   rental_charges: 'Charges',
   deposit: 'DDG',
   lease_seniority_months: 'Ancienneté',
@@ -350,12 +350,12 @@ export function PropertiesTable({
       },
       {
         accessorKey: 'net_rent',
-        header: 'Loyer HC',
+        header: 'Loyer HC /mois',
         cell: ({ row }) => formatCurrency(row.original.net_rent),
       },
       {
         id: 'target_rent',
-        header: 'Loyer cible',
+        header: 'Loyer cible /mois',
         enableSorting: false,
         cell: ({ row }) => (
           <EditableMoneyCell
@@ -372,7 +372,7 @@ export function PropertiesTable({
       },
       {
         id: 'rent_per_sqm',
-        header: 'Loyer/m²',
+        header: 'Loyer/m²/mois',
         accessorFn: (row) => perSqm(row.net_rent, row.surface) ?? -1,
         cell: ({ row }) => formatEuroPerSqm(perSqm(row.original.net_rent, row.original.surface), 1),
       },

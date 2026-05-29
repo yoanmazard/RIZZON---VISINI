@@ -3,7 +3,9 @@
 -- migration sûre, et l'import continue de fonctionner même si elle n'est pas encore
 -- appliquée (les champs absents s'afficheront simplement « — » côté UI).
 
-create or replace view public.properties_overview
+-- DROP + CREATE (et non CREATE OR REPLACE) : ajout de colonnes au milieu de la vue.
+drop view if exists public.properties_overview;
+create view public.properties_overview
 with (security_invoker = true)
 as
 select
