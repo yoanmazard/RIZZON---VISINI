@@ -367,6 +367,7 @@ export function PropertiesTable({
             field="targetPurchasePrice"
             initial={simulationsByProperty[row.original.id]?.target_purchase_price ?? null}
             onSaved={onSimulationSaved}
+            highlightEmpty
           />
         ),
       },
@@ -689,6 +690,7 @@ function EditableMoneyCell({
   field,
   initial,
   onSaved,
+  highlightEmpty = false,
 }: {
   propertyId: string;
   sim: SimulationRecord | undefined;
@@ -696,15 +698,23 @@ function EditableMoneyCell({
   field: 'targetPurchasePrice' | 'targetRent';
   initial: number | null;
   onSaved?: () => void;
+  highlightEmpty?: boolean;
 }) {
   const initialStr = initial != null ? String(initial) : '';
   const [value, setValue] = useState(initialStr);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // Resynchronise quand la donnée serveur change (après refresh).
   useEffect(() => {
     setValue(initialStr);
   }, [initialStr]);
+
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 1500);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   async function commit() {
     const parsed = value.trim() === '' ? null : parseMoneyInput(value);
@@ -714,24 +724,38 @@ function EditableMoneyCell({
     setSaving(true);
     const result = await saveIndividualSimulation(propertyId, values);
     setSaving(false);
-    if (result.ok) onSaved?.();
+    if (result.ok) {
+      setSaved(true);
+      onSaved?.();
+    }
   }
 
+  const isEmpty = value.trim() === '';
+  const borderClass = saved
+    ? 'border-emerald-400 ring-1 ring-emerald-300'
+    : highlightEmpty && isEmpty
+      ? 'border-amber-300 bg-amber-50'
+      : 'border-input';
+
   return (
-    <input
-      value={value}
-      inputMode="decimal"
-      disabled={saving}
-      onClick={(event) => event.stopPropagation()}
-      onChange={(event) => setValue(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
-        if (event.key === 'Escape') setValue(initialStr);
-      }}
-      className="h-8 w-28 rounded-md border border-input bg-background px-2 text-sm"
-      placeholder="—"
-    />
+    <div className="flex items-center gap-1">
+      <input
+        value={value}
+        inputMode="decimal"
+        disabled={saving}
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
+          if (event.key === 'Escape') setValue(initialStr);
+        }}
+        aria-label={field === 'targetPurchasePrice' ? "Prix d'achat cible" : 'Loyer cible'}
+        className={`h-8 w-28 rounded-md border bg-background px-2 text-sm ${borderClass}`}
+        placeholder={highlightEmpty ? 'à compléter' : '—'}
+      />
+      {saved && <span className="text-xs text-emerald-600">✓</span>}
+    </div>
   );
 }
 

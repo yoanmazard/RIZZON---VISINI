@@ -15,6 +15,7 @@ export type BasketSummary = {
   grossYield: number | null;
   netYield: number | null;
   latentCapitalGain: number;
+  netCapitalGain: number;
   mode: BasketMode;
   units: BasketUnit[];
 };

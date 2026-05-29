@@ -141,6 +141,7 @@ export function computeBasketSummary(context: BasketContext): BasketSummary | nu
   let totalAnnualRent = 0;
   let totalAnnualNetIncome = 0;
   let latentCapitalGain = 0;
+  let netCapitalGain = 0;
 
   for (const unit of units) {
     if (unit.mode === 'lié') {
@@ -172,6 +173,7 @@ export function computeBasketSummary(context: BasketContext): BasketSummary | nu
       totalAnnualRent += totals.rent * 12;
       totalAnnualNetIncome += metrics.annualNetIncome;
       latentCapitalGain += metrics.latentCapitalGain;
+      netCapitalGain += metrics.netCapitalGain;
       continue;
     }
 
@@ -192,6 +194,7 @@ export function computeBasketSummary(context: BasketContext): BasketSummary | nu
       totalAnnualRent += inputs.targetRent * 12;
       totalAnnualNetIncome += metrics.annualNetIncome;
       latentCapitalGain += metrics.latentCapitalGain;
+      netCapitalGain += metrics.netCapitalGain;
     }
   }
 
@@ -207,6 +210,7 @@ export function computeBasketSummary(context: BasketContext): BasketSummary | nu
     grossYield: totalCost > 0 ? totalAnnualRent / totalCost : null,
     netYield: totalCost > 0 ? totalAnnualNetIncome / totalCost : null,
     latentCapitalGain,
+    netCapitalGain,
     mode: hasDeliatedUnit ? 'délié' : 'lié',
     units,
   };

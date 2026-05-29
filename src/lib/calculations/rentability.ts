@@ -10,17 +10,26 @@ export type SimulationInputs = {
   mgmtFeeRate: number;
 };
 
+/**
+ * Frais de revente estimés (agence + diagnostics), en % du prix de revente.
+ * Hypothèse fixe V1 : la plus-value affichée est NETTE de ces frais pour ne pas
+ * surestimer le gain. (La fiscalité de plus-value reste hors périmètre V1.)
+ */
+export const RESALE_COST_RATE = 0.06;
+
 export type ProfitabilityMetrics = {
   notaryFees: number;
   totalCost: number;
   grossYield: number | null;
+  annualRentTarget: number;
   annualCollectedRent: number;
   managementFees: number;
   annualNetIncome: number;
   netYield: number | null;
   latentCapitalGain: number;
-  latentCapitalGainRate: number | null;
-  totalReturnRate: number | null;
+  resaleCosts: number;
+  netCapitalGain: number;
+  netCapitalGainRate: number | null;
 };
 
 export function calculateProfitability(inputs: SimulationInputs): ProfitabilityMetrics {
@@ -45,23 +54,66 @@ export function calculateProfitability(inputs: SimulationInputs): ProfitabilityM
 
   const grossYield = totalCost > 0 ? annualRentTarget / totalCost : null;
   const netYield = totalCost > 0 ? annualNetIncome / totalCost : null;
+
   const latentCapitalGain = targetResalePrice - totalCost;
-  const latentCapitalGainRate = totalCost > 0 ? latentCapitalGain / totalCost : null;
-  const totalReturnRate =
-    totalCost > 0 ? (annualNetIncome + latentCapitalGain) / totalCost : null;
+  const resaleCosts = targetResalePrice * RESALE_COST_RATE;
+  const netCapitalGain = targetResalePrice - resaleCosts - totalCost;
+  const netCapitalGainRate = totalCost > 0 ? netCapitalGain / totalCost : null;
 
   return {
     notaryFees,
     totalCost,
     grossYield,
+    annualRentTarget,
     annualCollectedRent,
     managementFees,
     annualNetIncome,
     netYield,
     latentCapitalGain,
-    latentCapitalGainRate,
-    totalReturnRate,
+    resaleCosts,
+    netCapitalGain,
+    netCapitalGainRate,
   };
+}
+
+/**
+ * Calcul inversé : prix d'achat maximum pour atteindre un rendement visé,
+ * à hypothèses de loyer/charges/travaux constantes.
+ *
+ * coût de revient = P·(1 + frais notaire) + travaux
+ * - brut : rendement = loyer annuel / coût           → coût requis = loyer annuel / rendement
+ * - net  : rendement = revenu net annuel / coût      → coût requis = revenu net / rendement
+ * puis P = (coût requis − travaux) / (1 + frais notaire)
+ */
+export function maxPurchasePriceForYield(
+  inputs: SimulationInputs,
+  targetRate: number,
+  mode: 'net' | 'gross' = 'net',
+): number | null {
+  if (!Number.isFinite(targetRate) || targetRate <= 0) return null;
+
+  const notaryFeeRate = clampRate(inputs.notaryFeeRate);
+  const works = Math.max(0, inputs.estimatedWorks);
+  const annualRentTarget = Math.max(0, inputs.targetRent) * 12;
+
+  let requiredCost: number;
+  if (mode === 'gross') {
+    if (annualRentTarget <= 0) return null;
+    requiredCost = annualRentTarget / targetRate;
+  } else {
+    const annualCollectedRent = annualRentTarget * (1 - clampRate(inputs.vacancyRate));
+    const managementFees = annualCollectedRent * clampRate(inputs.mgmtFeeRate);
+    const annualNetIncome =
+      annualCollectedRent -
+      Math.max(0, inputs.annualPropertyTax) -
+      Math.max(0, inputs.nonRecoverableCharges) -
+      managementFees;
+    if (annualNetIncome <= 0) return null;
+    requiredCost = annualNetIncome / targetRate;
+  }
+
+  const price = (requiredCost - works) / (1 + notaryFeeRate);
+  return price > 0 ? price : null;
 }
 
 function clampRate(value: number) {

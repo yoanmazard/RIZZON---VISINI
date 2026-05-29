@@ -1,11 +1,16 @@
 'use client';
 
 import type { BasketSummary } from '@/lib/basket/types';
+import { perSqm } from '@/lib/calculations/kpi';
 import {
   buildExportFileName,
   exportRowsToAoA,
 } from '@/lib/export/build-rows';
 import type { ExportMeta, ExportRow } from '@/lib/export/types';
+
+function round1(value: number | null) {
+  return value == null ? '' : Math.round(value * 10) / 10;
+}
 
 export async function downloadExcelExport(
   rows: ExportRow[],
@@ -30,9 +35,11 @@ export async function downloadExcelExport(
       ['Nombre de lots', summary.lotCount],
       ['Surface totale (m²)', summary.totalSurface],
       ['Prix achat cible (€)', summary.totalPurchasePrice],
+      ['Prix /m² (€)', round1(perSqm(summary.totalPurchasePrice, summary.totalSurface))],
       ['Coût de revient (€)', summary.totalCost],
       ['Loyer HC actuel (€)', summary.currentRent],
       ['Loyer HC cible (€)', summary.targetRent],
+      ['Loyer cible /m² (€)', round1(perSqm(summary.targetRent, summary.totalSurface))],
       [
         'Rentabilité brute (%)',
         summary.grossYield != null ? Number((summary.grossYield * 100).toFixed(2)) : '',
@@ -41,7 +48,7 @@ export async function downloadExcelExport(
         'Rentabilité nette (%)',
         summary.netYield != null ? Number((summary.netYield * 100).toFixed(2)) : '',
       ],
-      ['Plus-value latente (€)', summary.latentCapitalGain],
+      ['Plus-value nette (€)', summary.netCapitalGain],
       ['Mode', summary.mode],
       ['Scénario', options.scenarioName ?? ''],
       ['Exporté le', exportedAt],

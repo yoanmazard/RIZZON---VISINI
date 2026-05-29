@@ -9,7 +9,11 @@ import {
   simulationToFormValues,
   type SimulationFormValues,
 } from '@/lib/simulations/types';
-import { calculateProfitability } from '@/lib/calculations/rentability';
+import {
+  calculateProfitability,
+  maxPurchasePriceForYield,
+  RESALE_COST_RATE,
+} from '@/lib/calculations/rentability';
 import { perSqm } from '@/lib/calculations/kpi';
 import { saveIndividualSimulation } from '@/lib/simulations/actions';
 import { findLinkGroup, getPrimaryIdForPropertyId } from '@/lib/deliation/groups';
@@ -52,6 +56,7 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [targetYield, setTargetYield] = useState('5');
 
   const linkGroup = useMemo(
     () => (property ? findLinkGroup(property, treeRows) : null),
@@ -92,6 +97,22 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
     () => calculateProfitability(effectiveInputs),
     [effectiveInputs],
   );
+
+  // Rendement « en l'état » : même coût de revient, mais loyer actuellement encaissé.
+  const currentMetrics = useMemo(
+    () =>
+      calculateProfitability({
+        ...effectiveInputs,
+        targetRent: Number(property?.net_rent ?? 0),
+      }),
+    [effectiveInputs, property],
+  );
+
+  const maxPrice = useMemo(() => {
+    const rate = Number.parseFloat(targetYield.replace(',', '.'));
+    if (!Number.isFinite(rate)) return null;
+    return maxPurchasePriceForYield(effectiveInputs, rate / 100, 'net');
+  }, [effectiveInputs, targetYield]);
 
   if (!property) return null;
 
@@ -316,15 +337,69 @@ export function PropertySheet({ property, simulation, onClose, onSaved }: Proper
               />
               <MetricCard label="Revenu net annuel" value={formatCurrency(metrics.annualNetIncome)} />
               <MetricCard
-                label="Plus-value latente"
-                value={formatCurrency(metrics.latentCapitalGain)}
+                label="Plus-value nette"
+                value={formatCurrency(metrics.netCapitalGain)}
+                hint={`Après frais de revente ${RESALE_COST_RATE * 100} % · brute ${formatCurrency(
+                  metrics.latentCapitalGain,
+                )}`}
               />
               <MetricCard
-                label="Rendement global"
+                label="Plus-value nette / coût"
                 value={formatPercent(
-                  metrics.totalReturnRate ? metrics.totalReturnRate * 100 : null,
+                  metrics.netCapitalGainRate ? metrics.netCapitalGainRate * 100 : null,
                 )}
-                hint="Revenu net + plus-value / coût"
+                hint="Gain à la revente rapporté au coût total"
+              />
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Rendement en l&apos;état (loyer en place)
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard
+                label="Loyer HC actuel /mois"
+                value={formatCurrency(property.net_rent)}
+              />
+              <MetricCard
+                label="Loyer actuel /m²"
+                value={formatEuroPerSqm(perSqm(property.net_rent, property.surface), 1)}
+              />
+              <MetricCard
+                label="Rent. brute en l'état"
+                value={formatPercent(currentMetrics.grossYield ? currentMetrics.grossYield * 100 : null)}
+              />
+              <MetricCard
+                label="Rent. nette en l'état"
+                value={formatPercent(currentMetrics.netYield ? currentMetrics.netYield * 100 : null)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Calculé au coût de revient ci-dessus mais avec le loyer actuellement encaissé — la
+              rentabilité « si vous achetez sans rien changer ».
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Prix d&apos;achat maximum
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Rendement net visé (%)"
+                value={targetYield}
+                onChange={setTargetYield}
+              />
+              <MetricCard
+                label="Prix d'achat max conseillé"
+                value={formatCurrency(maxPrice)}
+                hint={
+                  maxPrice == null
+                    ? 'Revenu net insuffisant pour ce rendement'
+                    : `Pour viser ${targetYield || '0'} % net, loyer & travaux constants`
+                }
+                highlight
               />
             </div>
           </section>

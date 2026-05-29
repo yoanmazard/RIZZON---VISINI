@@ -185,7 +185,7 @@ export function AcquisitionBasketBanner({
             value={formatPercent(summary.netYield ? summary.netYield * 100 : null)}
             highlight
           />
-          <Metric label="Plus-value latente" value={formatCurrency(summary.latentCapitalGain)} />
+          <Metric label="Plus-value nette" value={formatCurrency(summary.netCapitalGain)} />
         </div>
 
         {summary.mode === 'délié' && (

@@ -8,11 +8,14 @@ export type ExportRow = {
   locataire: string;
   loyer_hc_actuel: number;
   loyer_hc_cible: number;
+  loyer_m2: number | null;
   prix_achat_cible: number;
+  prix_m2: number | null;
   cout_revient: number;
+  cout_m2: number | null;
   rentabilite_brute_pct: number | null;
   rentabilite_nette_pct: number | null;
-  plus_value_latente: number;
+  plus_value_nette: number;
   dpe: string;
   lien: string;
 };

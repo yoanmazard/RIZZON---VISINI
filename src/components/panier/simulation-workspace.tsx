@@ -419,7 +419,7 @@ function WorkspaceInner({ treeRows, savedSims, scenarios, overrides, setOverride
                     value={formatPercent(summary.netYield ? summary.netYield * 100 : null)}
                     highlight
                   />
-                  <Stat label="Plus-value latente" value={formatCurrency(summary.latentCapitalGain)} />
+                  <Stat label="Plus-value nette" value={formatCurrency(summary.netCapitalGain)} />
                 </div>
                 {summary.mode === 'délié' && (
                   <p className="mt-3 text-xs text-muted-foreground">
@@ -512,7 +512,7 @@ function WorkspaceInner({ treeRows, savedSims, scenarios, overrides, setOverride
                               {formatPercent(m.netYield != null ? m.netYield * 100 : null)}
                             </td>
                             <td className="whitespace-nowrap px-3 py-2">
-                              {formatCurrency(m.latentCapitalGain)}
+                              {formatCurrency(m.netCapitalGain)}
                             </td>
                             <td className="whitespace-nowrap px-3 py-2">
                               {canDeliate &&
@@ -703,7 +703,7 @@ const COMPARE_ROWS: { label: string; render: (s: BasketSummary | null) => string
     label: 'Rent. nette',
     render: (s) => (s ? formatPercent(s.netYield ? s.netYield * 100 : null) : '—'),
   },
-  { label: 'Plus-value latente', render: (s) => (s ? formatCurrency(s.latentCapitalGain) : '—') },
+  { label: 'Plus-value nette', render: (s) => (s ? formatCurrency(s.netCapitalGain) : '—') },
 ];
 
 function NumberInput({

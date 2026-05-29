@@ -1,5 +1,6 @@
 import { calculateProfitability } from '@/lib/calculations/rentability';
 import type { SimulationInputs } from '@/lib/calculations/rentability';
+import { perSqm } from '@/lib/calculations/kpi';
 import type { ExportRow } from '@/lib/export/types';
 import type { PropertyTreeRow } from '@/lib/import/types';
 
@@ -13,14 +14,21 @@ const EXPORT_HEADERS: Array<{ key: keyof ExportRow; label: string }> = [
   { key: 'locataire', label: 'Locataire' },
   { key: 'loyer_hc_actuel', label: 'Loyer HC actuel (€)' },
   { key: 'loyer_hc_cible', label: 'Loyer HC cible (€)' },
+  { key: 'loyer_m2', label: 'Loyer cible /m² (€)' },
   { key: 'prix_achat_cible', label: 'Prix achat cible (€)' },
+  { key: 'prix_m2', label: 'Prix /m² (€)' },
   { key: 'cout_revient', label: 'Coût de revient (€)' },
+  { key: 'cout_m2', label: 'Coût /m² (€)' },
   { key: 'rentabilite_brute_pct', label: 'Rentabilité brute (%)' },
   { key: 'rentabilite_nette_pct', label: 'Rentabilité nette (%)' },
-  { key: 'plus_value_latente', label: 'Plus-value latente (€)' },
+  { key: 'plus_value_nette', label: 'Plus-value nette (€)' },
   { key: 'dpe', label: 'DPE' },
   { key: 'lien', label: 'Lien' },
 ];
+
+function round1(value: number | null): number | null {
+  return value == null ? null : Math.round(value * 10) / 10;
+}
 
 export function getExportHeaders() {
   return EXPORT_HEADERS.map((header) => header.label);
@@ -54,13 +62,16 @@ export function buildExportRows(
       locataire: property.tenant_label ?? 'Vacant',
       loyer_hc_actuel: Number(property.net_rent ?? 0),
       loyer_hc_cible: inputs.targetRent,
+      loyer_m2: round1(perSqm(inputs.targetRent, property.surface)),
       prix_achat_cible: inputs.targetPurchasePrice,
+      prix_m2: round1(perSqm(inputs.targetPurchasePrice, property.surface)),
       cout_revient: metrics.totalCost,
+      cout_m2: round1(perSqm(metrics.totalCost, property.surface)),
       rentabilite_brute_pct:
         metrics.grossYield != null ? Number((metrics.grossYield * 100).toFixed(2)) : null,
       rentabilite_nette_pct:
         metrics.netYield != null ? Number((metrics.netYield * 100).toFixed(2)) : null,
-      plus_value_latente: metrics.latentCapitalGain,
+      plus_value_nette: metrics.netCapitalGain,
       dpe: property.dpe_grade ?? '',
       lien,
     };
