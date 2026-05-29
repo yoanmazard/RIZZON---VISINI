@@ -18,6 +18,15 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
     return { ok: false, message: adminCheck.message };
   }
 
+  // Dédoublonnage par ref_lot (garde la 1re occurrence) : évite l'échec d'upsert
+  // « ON CONFLICT cannot affect row a second time » quand le fichier a des refs identiques.
+  const seenRefs = new Set<string>();
+  rows = rows.filter((row) => {
+    if (seenRefs.has(row.ref_lot)) return false;
+    seenRefs.add(row.ref_lot);
+    return true;
+  });
+
   const supabase = await createClient();
 
   // Remplacement total : on vide les données existantes avant de réimporter,
