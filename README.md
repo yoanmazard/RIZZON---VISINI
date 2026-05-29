@@ -69,6 +69,13 @@ Ouvrir http://localhost:3000
 4. **`supabase db push`** : appliquer le schéma + seed `allowed_emails`
 5. Remplacer les e-mails dans `allowed_emails` et `.env` (`ALLOWED_EMAILS`)
 
+### Rôles
+
+| Rôle | Droits |
+|------|--------|
+| **Administrateur** | Import état locatif, historique exports, gestion liste blanche (`/dashboard/acces`) |
+| **Utilisateur** | Tableau, fiches lots, simulations, panier, déliation, export Excel |
+
 ### Import état locatif (dashboard)
 
 1. Se connecter au dashboard → **Import état locatif**

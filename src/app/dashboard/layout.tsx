@@ -26,9 +26,14 @@ export default async function DashboardLayout({
               <Link href="/dashboard">Tableau de bord</Link>
             </Button>
             {isAdmin && (
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/dashboard/historique">Historique exports</Link>
-              </Button>
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/dashboard/acces">Accès</Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/dashboard/historique">Historique exports</Link>
+                </Button>
+              </>
             )}
             <form action={signOut}>
               <Button type="submit" variant="outline" size="sm">

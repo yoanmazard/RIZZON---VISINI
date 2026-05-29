@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/auth/callback', '/auth/unauthorized'];
-const ADMIN_PATHS = ['/dashboard/historique'];
+const ADMIN_PATHS = ['/dashboard/historique', '/dashboard/acces'];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(
