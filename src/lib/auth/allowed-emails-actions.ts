@@ -3,14 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin, type AppRole } from '@/lib/auth/access';
+import {
+  countActiveAdmins,
+  getRecordById,
+  type AllowedEmailRecord,
+} from '@/lib/auth/allowed-emails-queries';
 
-export type AllowedEmailRecord = {
-  id: string;
-  email: string;
-  role: AppRole;
-  is_active: boolean;
-  created_at: string;
-};
+export type { AllowedEmailRecord };
 
 type ActionResult = {
   ok: boolean;
@@ -23,53 +22,6 @@ function normalizeEmail(email: string) {
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-async function countActiveAdmins(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { count, error } = await supabase
-    .from('allowed_emails')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'admin')
-    .eq('is_active', true);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return count ?? 0;
-}
-
-async function getRecordById(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
-  const { data, error } = await supabase
-    .from('allowed_emails')
-    .select('id, email, role, is_active, created_at')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as AllowedEmailRecord | null;
-}
-
-export async function listAllowedEmails(): Promise<AllowedEmailRecord[]> {
-  const adminCheck = await requireAdmin();
-  if (!adminCheck.ok) {
-    return [];
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('allowed_emails')
-    .select('id, email, role, is_active, created_at')
-    .order('email', { ascending: true });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? []) as AllowedEmailRecord[];
 }
 
 export async function addAllowedEmail(email: string, role: AppRole): Promise<ActionResult> {

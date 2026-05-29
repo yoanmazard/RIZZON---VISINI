@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $projectRef = "qgnqgvwkgynmbxpyjtna"
-$envFile = Join-Path $PSScriptRoot ".." ".env"
-$envFile = Resolve-Path $envFile
+$rootDir = Resolve-Path (Join-Path $PSScriptRoot "..")
+$envFile = Join-Path $rootDir ".env"
 
 if (Test-Path $envFile) {
   Get-Content $envFile | ForEach-Object {
@@ -14,14 +14,28 @@ if (Test-Path $envFile) {
   }
 }
 
-Set-Location (Join-Path $PSScriptRoot "..")
+Set-Location $rootDir
 
-if (-not $env:SUPABASE_ACCESS_TOKEN) {
+function Test-SupabaseCliAuth {
+  $output = supabase projects list 2>&1 | Out-String
+  return ($LASTEXITCODE -eq 0 -and $output -match 'REFERENCE ID')
+}
+
+if (-not (Test-SupabaseCliAuth)) {
   Write-Host "Connexion Supabase (navigateur)..."
   supabase login
 }
 
-Write-Host "Mise à jour auth (site URL, redirects, MFA TOTP)..."
+if (-not (Test-Path (Join-Path $rootDir "supabase\.temp\project-ref"))) {
+  Write-Host "Liaison du projet $projectRef..."
+  $dbPassword = ($env:DATABASE_URL -replace '^postgresql://postgres(?:\.[^:@]+)??:([^@]+)@.*$', '$1')
+  if (-not $dbPassword -or $dbPassword -eq $env:DATABASE_URL) {
+    $dbPassword = ($env:DATABASE_URL -replace '^postgresql://postgres:([^@]+)@.*$', '$1')
+  }
+  supabase link --project-ref $projectRef --password $dbPassword
+}
+
+Write-Host "Mise a jour auth (site URL, redirects, MFA TOTP)..."
 node scripts/push-auth-config.mjs
 
 Write-Host "Synchronisation config.toml distante..."

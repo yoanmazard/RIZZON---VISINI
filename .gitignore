@@ -9,4 +9,7 @@ supabase/.temp/
 supabase/.branches/
 ~$*
 
-.vercel
+# Données locatives (RGPD) et fichiers locaux
+*.xlsx
+cahier_extract.txt
+Charte Graphique GERIMALP.pdf

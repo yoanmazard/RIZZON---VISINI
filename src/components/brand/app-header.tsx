@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export function AppHeader({ isAdmin }: { isAdmin: boolean }) {
   return (
-    <header className="border-b border-[var(--gerimalp-line-1)] bg-white">
+    <header className="sticky top-0 z-[70] border-b border-[var(--gerimalp-line-1)] bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
         <div className="flex min-w-0 items-center gap-5">
           <BrandLogo href="/dashboard" className="h-9" />

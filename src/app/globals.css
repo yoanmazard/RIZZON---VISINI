@@ -23,7 +23,7 @@
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 6px);
   --radius-xl: calc(var(--radius) + 16px);
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-bricolage), system-ui, sans-serif;
 }
 
 :root {
@@ -49,7 +49,7 @@
   --gerimalp-radius-lg: 14px;
   --font-display: var(--font-bricolage), system-ui, sans-serif;
   --font-body: var(--font-bricolage), system-ui, sans-serif;
-  --font-baseline: var(--font-lato), system-ui, sans-serif;
+  --font-baseline: var(--font-bricolage), system-ui, sans-serif;
 
   /* shadcn mapping */
   --radius: 0.5rem;

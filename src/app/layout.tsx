@@ -1,16 +1,11 @@
 import type { Metadata } from 'next';
-import { Bricolage_Grotesque, Lato } from 'next/font/google';
+import { Bricolage_Grotesque } from 'next/font/google';
 import './globals.css';
 
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
   variable: '--font-bricolage',
-});
-
-const lato = Lato({
-  subsets: ['latin'],
-  weight: ['400', '700', '900'],
-  variable: '--font-lato',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -27,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body className={`${bricolage.variable} ${lato.variable} font-sans`}>{children}</body>
+    <html lang="fr" className={bricolage.variable}>
+      <body className={`${bricolage.className} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

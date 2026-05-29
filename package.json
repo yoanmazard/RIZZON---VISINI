@@ -12,12 +12,15 @@
     "db:check": "node scripts/check-db.mjs",
     "db:probe": "node scripts/probe-db.mjs",
     "db:verify": "node scripts/verify-db.mjs",
-    "db:push": "node scripts/push-db.mjs",
+    "db:audit": "node scripts/audit-supabase.mjs",
+    "db:push": "node scripts/apply-migrations.mjs",
+    "db:schema": "node scripts/dump-schema.mjs",
     "db:seed": "node scripts/apply-seed.mjs",
     "supabase:link": "powershell -ExecutionPolicy Bypass -File scripts/setup-link.ps1",
     "supabase:auth": "powershell -ExecutionPolicy Bypass -File scripts/setup-auth-config.ps1",
     "vercel:link": "vercel link --project v0-acquisitionrizzon",
-    "vercel:deploy": "vercel --prod"
+    "vercel:deploy": "vercel --prod",
+    "import:etat-locatif": "tsx scripts/import-etat-locatif.ts"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
@@ -48,6 +51,7 @@
     "eslint-config-next": "^15.3.3",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
+    "tsx": "^4.20.3",
     "vitest": "^4.1.7"
   }
 }

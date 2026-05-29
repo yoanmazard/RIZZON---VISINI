@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { getPoolerConfig } from './pooler-config.mjs';
 
-const client = new pg.Client(getPoolerConfig());
+const client = new pg.Client({
+  ...getPoolerConfig(),
+  prepare: false,
+});
 
 const root = dirname(fileURLToPath(import.meta.url));
 const seedSql = readFileSync(join(root, '..', 'supabase', 'seed.sql'), 'utf8');

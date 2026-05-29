@@ -42,7 +42,7 @@ Dashboard Vercel → **v0-acquisitionrizzon** → Settings → Environment Varia
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://qgnqgvwkgynmbxpyjtna.supabase.co` | idem | idem |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | clé publishable Supabase | idem | idem |
 | `NEXT_PUBLIC_SITE_URL` | `https://v0-acquisitionrizzon.vercel.app` | *(vide — fallback VERCEL_URL)* | `http://localhost:3000` |
-| `ALLOWED_EMAILS` | `yoan@mmimm.fr,yoan.mazard@gmail.fr,arnaud.visini@gmail.com` | idem | idem |
+| `ALLOWED_EMAILS` | `yoan@mmimm.fr,yoan.mazard@gmail.com,arnaud.visini@gmail.com` | idem | idem |
 
 Ne **jamais** exposer `DATABASE_URL` ni clé `service_role` sur Vercel (non nécessaires pour l'app).
 

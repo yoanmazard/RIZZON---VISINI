@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
+import { isAdminRole, resolveUserRole, type AppRole } from '@/lib/auth/roles';
 
-export type AppRole = 'admin' | 'owner';
+export type { AppRole };
 
 export type UserAccess = {
   email: string;
@@ -8,9 +9,7 @@ export type UserAccess = {
   isAdmin: boolean;
 };
 
-export function isAdminRole(role: string | null | undefined) {
-  return role === 'admin';
-}
+export { isAdminRole };
 
 export async function getCurrentUserAccess(): Promise<UserAccess | null> {
   const supabase = await createClient();
@@ -21,14 +20,7 @@ export async function getCurrentUserAccess(): Promise<UserAccess | null> {
   const email = user?.email?.toLowerCase();
   if (!email) return null;
 
-  const { data } = await supabase
-    .from('allowed_emails')
-    .select('role')
-    .eq('email', email)
-    .eq('is_active', true)
-    .maybeSingle();
-
-  const role: AppRole = data?.role === 'admin' ? 'admin' : 'owner';
+  const role = await resolveUserRole(supabase, email);
 
   return {
     email,

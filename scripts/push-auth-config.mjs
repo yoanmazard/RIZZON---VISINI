@@ -1,13 +1,17 @@
 /**
  * Pousse site_url, redirect URLs et MFA TOTP via l'API Management Supabase.
- * Prérequis : SUPABASE_ACCESS_TOKEN (supabase login ou dashboard → Access Tokens)
+ * Prérequis : supabase login (token CLI) ou SUPABASE_ACCESS_TOKEN
  */
+import { loadSupabaseAccessToken } from './load-supabase-token.mjs';
+
 const projectRef = process.env.SUPABASE_PROJECT_REF ?? 'qgnqgvwkgynmbxpyjtna';
-const token = process.env.SUPABASE_ACCESS_TOKEN;
+const token = loadSupabaseAccessToken();
 
 if (!token) {
-  console.error('SUPABASE_ACCESS_TOKEN manquant. Lancez: supabase login');
-  process.exit(1);
+  console.warn(
+    'Token Management API introuvable — auth sera configurée via supabase config push uniquement.',
+  );
+  process.exit(0);
 }
 
 const siteUrl = 'https://v0-acquisitionrizzon.vercel.app';

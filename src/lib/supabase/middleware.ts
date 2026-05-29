@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isAdminRole, resolveUserRole } from '@/lib/auth/roles';
 
 const PUBLIC_PATHS = ['/login', '/auth/callback', '/auth/unauthorized'];
 const ADMIN_PATHS = ['/dashboard/historique', '/dashboard/acces'];
@@ -16,16 +17,6 @@ function isAdminPath(pathname: string) {
   );
 }
 
-async function getUserRole(supabase: ReturnType<typeof createServerClient>, email: string) {
-  const { data } = await supabase
-    .from('allowed_emails')
-    .select('role')
-    .eq('email', email.toLowerCase())
-    .eq('is_active', true)
-    .maybeSingle();
-
-  return data?.role ?? 'owner';
-}
 
 function getAllowedEmailsFromEnv() {
   return (process.env.ALLOWED_EMAILS ?? '')
@@ -121,8 +112,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAdminPath(pathname)) {
-    const role = await getUserRole(supabase, email);
-    if (role !== 'admin') {
+    const role = await resolveUserRole(supabase, email);
+    if (!isAdminRole(role)) {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       return NextResponse.redirect(url);
