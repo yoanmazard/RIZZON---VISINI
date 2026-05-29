@@ -20,6 +20,18 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
 
   const supabase = await createClient();
 
+  // Remplacement total : on vide les données existantes avant de réimporter,
+  // pour que la base reflète EXACTEMENT le dernier fichier importé.
+  // Ordre : lot_links et financials (FK → properties) puis properties
+  // (la suppression des properties cascade vers leases / lease_revisions / lease_secondary_lots).
+  const purgeTargets = ['lot_links', 'financials', 'properties'] as const;
+  for (const table of purgeTargets) {
+    const { error: purgeError } = await supabase.from(table).delete().not('id', 'is', null);
+    if (purgeError) {
+      return { ok: false, message: `Erreur purge ${table} : ${purgeError.message}` };
+    }
+  }
+
   const refToId = new Map<string, string>();
 
   for (let index = 0; index < rows.length; index += BATCH_SIZE) {
@@ -117,7 +129,7 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
 
   return {
     ok: true,
-    message: `${rows.length} lot(s) importé(s) avec succès.`,
+    message: `Base remplacée : ${rows.length} lot(s) importé(s) (${linkPayload.length} lien(s)).`,
     imported: rows.length,
     linksCreated: linkPayload.length,
   };

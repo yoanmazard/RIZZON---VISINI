@@ -90,6 +90,8 @@ export function CsvImportPanel() {
         <CardTitle>Import état locatif</CardTitle>
         <CardDescription>
           Parsing côté navigateur uniquement. Aucune donnée nominative n&apos;est envoyée au serveur.
+          ⚠️ Chaque import <strong>remplace entièrement</strong> les lots existants (la base reflète
+          le dernier fichier importé) — importez tous vos fichiers en une seule fois si besoin.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
