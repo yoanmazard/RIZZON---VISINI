@@ -13,7 +13,7 @@ const EXCLUDED_PATTERNS = [
 
 export const COLUMN_ALIASES = {
   ref_lot: ['n° lot', 'nº lot', 'no lot', 'num lot', 'ref lot'],
-  building_code: ['code unique_1', 'code immeuble'],
+  building_code: ['code unique_1', 'code immeuble', 'code unique'],
   main_type: ['type de lot', 'type lot', 'detail type', 'détail type'],
   nb_pieces: ['nb de pièces', 'nb pieces', 'nombre de pièces'],
   surface_habitable: ['surface habitable', 'surface'],
@@ -25,20 +25,29 @@ export const COLUMN_ALIASES = {
   dpe_grade: ['dpe', 'classe dpe'],
   secondary_lot: ['n° lot secondaire', 'nº lot secondaire', 'no lot secondaire', 'lot secondaire'],
   designation: ['désignation', 'designation'],
-  net_rent: ['loyer ht', 'loyer hors charges', 'loyer hc'],
+  net_rent: ['loyer ht', 'loyer hors charges', 'loyer hc', 'loyer ht/hc', 'loyer ht / hc'],
   rent_ttc: ['loyer ttc'],
   charges_ht: ['provisions ht', 'charges ht'],
   charges_ttc: ['provisions ttc', 'charges ttc'],
   deposit: ['ddg', 'depot de garantie', 'dépôt de garantie'],
   notice_in_progress: ['préavis en cours', 'preavis en cours'],
+  // Ancienneté = depuis la prise d'effet INITIALE du bail (pas la date de renouvellement).
   lease_start: [
+    'date prise d\'effet initial',
     'date d\'entrée',
     'date d entree',
     'date début bail',
     'date debut bail',
     'date de debut de bail',
   ],
-  lease_end: ['date de sortie', 'date sortie', 'fin de bail'],
+  lease_end: [
+    'date de sortie',
+    'date sortie',
+    'fin de bail',
+    'date de sortie contractuelle',
+    'date fin',
+  ],
+  termination_date: ['date de résiliation'],
   tenant_status: ['statut locataire', 'statut'],
   tenant_raw: ['locataire', 'nom locataire'],
 } as const;
@@ -62,15 +71,20 @@ export function isExcludedColumn(header: string) {
 export function buildHeaderMap(headers: string[]) {
   const map = new Map<string, string>();
 
-  for (const header of headers) {
-    const normalized = normalizeHeader(header);
-    if (isExcludedColumn(header)) continue;
+  // En-têtes (hors colonnes exclues) avec leur forme normalisée.
+  const candidates = headers
+    .filter((header) => !isExcludedColumn(header))
+    .map((header) => ({ header, normalized: normalizeHeader(header) }));
 
-    for (const [key, aliases] of Object.entries(COLUMN_ALIASES)) {
-      if (aliases.some((alias) => normalized === normalizeHeader(alias))) {
-        if (!map.has(key)) {
-          map.set(key, header);
-        }
+  // Pour chaque champ, on prend le premier ALIAS (par ordre de préférence) qui matche.
+  // Ainsi « code unique_1 » prime sur « code unique » selon l'ordre déclaré.
+  for (const [key, aliases] of Object.entries(COLUMN_ALIASES)) {
+    for (const alias of aliases) {
+      const normalizedAlias = normalizeHeader(alias);
+      const match = candidates.find((candidate) => candidate.normalized === normalizedAlias);
+      if (match) {
+        map.set(key, match.header);
+        break;
       }
     }
   }

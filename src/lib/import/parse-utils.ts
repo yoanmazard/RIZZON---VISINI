@@ -62,24 +62,46 @@ export function determineStatus(
   row: Record<string, string>,
   headerMap: Map<string, string>,
 ): LotStatus {
+  const hasTenantColumn = headerMap.has('tenant_raw');
   const tenantRaw = getCell(row, headerMap, 'tenant_raw');
   const tenantStatus = getCell(row, headerMap, 'tenant_status');
-  const leaseEnd = getCell(row, headerMap, 'lease_end');
 
-  if (isVacantTenant(tenantRaw)) {
+  // 1. Signal explicite « VACANT » (uniquement si une colonne locataire/statut existe).
+  if (hasTenantColumn && isVacantTenant(tenantRaw)) {
     return 'Vacant';
   }
-
   if (tenantStatus && isVacantTenant(tenantStatus)) {
     return 'Vacant';
   }
 
-  const endDate = parseDate(leaseEnd);
+  // 2. Un loyer encaissé = lot occupé (cas des exports sans colonne locataire).
+  const rent = parseNumber(getCell(row, headerMap, 'net_rent'));
+  if (rent > 0) {
+    return 'Loué';
+  }
+
+  // 3. Date de sortie/fin de bail passée sans loyer → vacant.
+  const endDate = parseDate(getCell(row, headerMap, 'lease_end'));
   if (endDate && endDate < new Date()) {
     return 'Vacant';
   }
 
-  return 'Loué';
+  // 4. Un bail en cours (date de prise d'effet) implique un lot loué.
+  const startDate = parseDate(getCell(row, headerMap, 'lease_start'));
+  if (startDate) {
+    return 'Loué';
+  }
+
+  return 'Vacant';
+}
+
+/** Déduit le nombre de pièces depuis le type de lot (« Appartement T4 » → 4, studio → 1). */
+export function inferPiecesFromType(mainType: string): number | null {
+  if (!mainType) return null;
+  const match = mainType.match(/\bT\s?(\d+)\b/i);
+  if (match) return Number(match[1]);
+  if (/studio/i.test(mainType)) return 1;
+  return null;
 }
 
 export function isAnnexLot(mainType: string, designation: string) {

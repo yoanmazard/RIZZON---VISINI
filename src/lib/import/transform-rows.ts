@@ -9,9 +9,11 @@ import {
   buildRefLot,
   computeLeaseSeniorityMonths,
   determineStatus,
+  inferPiecesFromType,
   isAnnexLot,
   isVacantTenant,
   parseBoolean,
+  parseDate,
   parseNumber,
   parseOptionalInt,
   parseOptionalNumber,
@@ -86,7 +88,8 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
     cleanRows.push({
       ref_lot: refLot,
       main_type: mainType,
-      nb_pieces: parseOptionalInt(getCell(row, headerMap, 'nb_pieces')),
+      nb_pieces:
+        parseOptionalInt(getCell(row, headerMap, 'nb_pieces')) ?? inferPiecesFromType(mainType),
       surface,
       building_name: getCell(row, headerMap, 'building_name') || null,
       address: buildAddress(getCell(row, headerMap, 'address'), getCell(row, headerMap, 'city')),
@@ -99,7 +102,9 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
       rental_charges: rentalCharges,
       deposit: parseNumber(getCell(row, headerMap, 'deposit')),
       lease_seniority_months: computeLeaseSeniorityMonths(getCell(row, headerMap, 'lease_start')),
-      notice_in_progress: parseBoolean(getCell(row, headerMap, 'notice_in_progress')),
+      notice_in_progress:
+        parseBoolean(getCell(row, headerMap, 'notice_in_progress')) ||
+        Boolean(parseDate(getCell(row, headerMap, 'termination_date'))),
       linked_annex_refs: parseSecondaryLotRefs(
         getCell(row, headerMap, 'secondary_lot'),
         buildingCode,

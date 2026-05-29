@@ -90,9 +90,6 @@ const COLUMN_LABELS: Record<string, string> = {
 
 // Colonnes masquées par défaut pour ne pas saturer l'écran (activables via « Colonnes »).
 const DEFAULT_HIDDEN: VisibilityState = {
-  rental_charges: false,
-  deposit: false,
-  lease_seniority_months: false,
   total_cost: false,
   address: false,
 };

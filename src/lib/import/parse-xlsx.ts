@@ -17,7 +17,12 @@ export async function parseXlsxRows(file: File): Promise<Record<string, string>[
   }
 
   const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+  // raw:false → valeurs formatées comme affichées (dates « jj/mm/aaaa », montants lisibles)
+  // plutôt que des numéros de série Excel, pour fiabiliser dates et montants.
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+    defval: '',
+    raw: false,
+  });
 
   if (rows.length === 0) {
     throw new Error('Aucune ligne trouvée dans le fichier Excel.');
