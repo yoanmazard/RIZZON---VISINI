@@ -7,7 +7,13 @@ import { CsvImportPanel } from '@/components/import/csv-import-panel';
 import { PropertiesTable } from '@/components/dashboard/properties-table';
 import { DeliationModal } from '@/components/dashboard/deliation-modal';
 
-export function DashboardView({ data }: { data: DashboardData }) {
+export function DashboardView({
+  data,
+  isAdmin,
+}: {
+  data: DashboardData;
+  isAdmin: boolean;
+}) {
   const router = useRouter();
 
   return (
@@ -16,7 +22,14 @@ export function DashboardView({ data }: { data: DashboardData }) {
       simulationsByProperty={data.simulationsByProperty}
     >
       <div className="space-y-6 pb-44">
-        <CsvImportPanel />
+        {isAdmin ? (
+          <CsvImportPanel />
+        ) : (
+          <p className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            Consultation et analyse des lots. L&apos;import des états locatifs est réservé aux
+            administrateurs.
+          </p>
+        )}
         <PropertiesTable
           rows={data.treeRows}
           stats={data.stats}

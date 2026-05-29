@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUserAccess } from '@/lib/auth/access';
 import { getDashboardData } from '@/lib/dashboard/queries';
 import { DashboardView } from '@/components/dashboard/dashboard-view';
 
@@ -7,6 +8,7 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const access = await getCurrentUserAccess();
 
   let dashboardData;
   let loadError: string | null = null;
@@ -32,7 +34,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-6">
-      <p className="text-sm text-muted-foreground">Connecté en tant que {user?.email}</p>
+      <p className="text-sm text-muted-foreground">
+        Connecté en tant que {user?.email}
+        {access?.isAdmin ? ' · Administrateur' : ' · Utilisateur'}
+      </p>
 
       {loadError && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -42,7 +47,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <DashboardView data={dashboardData} />
+      <DashboardView data={dashboardData} isAdmin={access?.isAdmin ?? false} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { signOut } from '@/lib/auth/actions';
+import { getCurrentUserAccess } from '@/lib/auth/access';
 import { Button } from '@/components/ui/button';
 
 export default async function DashboardLayout({
@@ -7,6 +8,9 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const access = await getCurrentUserAccess();
+  const isAdmin = access?.isAdmin ?? false;
+
   return (
     <main className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -21,9 +25,11 @@ export default async function DashboardLayout({
             <Button asChild variant="ghost" size="sm">
               <Link href="/dashboard">Tableau de bord</Link>
             </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/dashboard/historique">Historique exports</Link>
-            </Button>
+            {isAdmin && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/dashboard/historique">Historique exports</Link>
+              </Button>
+            )}
             <form action={signOut}>
               <Button type="submit" variant="outline" size="sm">
                 Déconnexion

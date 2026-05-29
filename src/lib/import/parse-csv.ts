@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import { transformCsvRows } from '@/lib/import/transform-rows';
 import type { ImportParseResult } from '@/lib/import/types';
 
-export function parseCsvFile(file: File): Promise<ImportParseResult> {
+export function parseCsvRows(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, string>>(file, {
       header: true,
@@ -18,11 +18,16 @@ export function parseCsvFile(file: File): Promise<ImportParseResult> {
           return;
         }
 
-        resolve(transformCsvRows(results.data));
+        resolve(results.data);
       },
       error(error) {
         reject(error);
       },
     });
   });
+}
+
+export async function parseCsvFile(file: File): Promise<ImportParseResult> {
+  const rows = await parseCsvRows(file);
+  return transformCsvRows(rows);
 }

@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUserAccess } from '@/lib/auth/access';
 import type { DownloadHistoryRecord } from '@/lib/export/types';
 import {
   Card,
@@ -9,6 +11,11 @@ import {
 } from '@/components/ui/card';
 
 export default async function HistoriqueExportsPage() {
+  const access = await getCurrentUserAccess();
+  if (!access?.isAdmin) {
+    redirect('/dashboard');
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('download_history')

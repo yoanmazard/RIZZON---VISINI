@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, FileWarning, CheckCircle2 } from 'lucide-react';
-import { parseCsvFile } from '@/lib/import/parse-csv';
+import { IMPORT_SOURCE_HINT, parseImportFiles } from '@/lib/import/parse-import-file';
 import { importCleanLots } from '@/lib/import/actions';
 import type { ImportParseResult } from '@/lib/import/types';
 import { formatCurrency } from '@/lib/format';
@@ -20,7 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export function CsvImportPanel() {
   const router = useRouter();
   const [parseResult, setParseResult] = useState<ImportParseResult | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileNames, setFileNames] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -39,20 +39,20 @@ export function CsvImportPanel() {
   );
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = [...(event.target.files ?? [])];
+    if (files.length === 0) return;
 
     setError(null);
     setSuccessMessage(null);
     setIsParsing(true);
-    setFileName(file.name);
+    setFileNames(files.map((file) => file.name));
 
     try {
-      const result = await parseCsvFile(file);
+      const result = await parseImportFiles(files);
       setParseResult(result);
     } catch (parseError) {
       setParseResult(null);
-      setError(parseError instanceof Error ? parseError.message : 'Impossible de lire le CSV.');
+      setError(parseError instanceof Error ? parseError.message : 'Impossible de lire le fichier.');
     } finally {
       setIsParsing(false);
       event.target.value = '';
@@ -75,19 +75,29 @@ export function CsvImportPanel() {
 
     setSuccessMessage(result.message);
     setParseResult(null);
-    setFileName(null);
+    setFileNames([]);
     router.refresh();
   }
+
+  const fileLabel =
+    fileNames.length === 0
+      ? 'Sélectionner Etat locatif.xlsx, Etat locatif2.xlsx (ou CSV)'
+      : fileNames.join(' + ');
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Import CSV pseudonymisé</CardTitle>
+        <CardTitle>Import état locatif</CardTitle>
         <CardDescription>
           Parsing côté navigateur uniquement. Aucune donnée nominative n&apos;est envoyée au serveur.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <Alert>
+          <AlertTitle>Sources attendues</AlertTitle>
+          <AlertDescription>{IMPORT_SOURCE_HINT}</AlertDescription>
+        </Alert>
+
         <Alert>
           <AlertTitle>Vérification obligatoire</AlertTitle>
           <AlertDescription>
@@ -98,16 +108,15 @@ export function CsvImportPanel() {
 
         <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-10 transition hover:bg-muted/40">
           <Upload className="mb-3 h-8 w-8 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            {fileName ? fileName : 'Sélectionner un fichier CSV de gestion locative'}
-          </span>
+          <span className="text-sm font-medium">{fileLabel}</span>
           <span className="mt-1 text-xs text-muted-foreground">
-            Colonnes personnelles filtrées automatiquement
+            Formats : .xlsx, .xls, .csv — sélection multiple possible
           </span>
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             className="hidden"
+            multiple
             onChange={handleFileChange}
             disabled={isParsing || isImporting}
           />

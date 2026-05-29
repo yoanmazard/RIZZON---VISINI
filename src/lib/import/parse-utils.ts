@@ -66,7 +66,11 @@ export function determineStatus(
   const tenantStatus = getCell(row, headerMap, 'tenant_status');
   const leaseEnd = getCell(row, headerMap, 'lease_end');
 
-  if (isVacantTenant(tenantRaw) || isVacantTenant(tenantStatus)) {
+  if (isVacantTenant(tenantRaw)) {
+    return 'Vacant';
+  }
+
+  if (tenantStatus && isVacantTenant(tenantStatus)) {
     return 'Vacant';
   }
 
@@ -83,13 +87,28 @@ export function isAnnexLot(mainType: string, designation: string) {
   return /garage|cave|parking|box|annexe|cellier|local/.test(haystack);
 }
 
-export function parseSecondaryLotRefs(value: string) {
+export function buildRefLot(buildingCode: string, lotNumber: string) {
+  const lot = lotNumber.trim();
+  if (!lot) return '';
+
+  const building = buildingCode.trim();
+  if (!building) return lot;
+
+  if (lot.includes('-') && lot.startsWith(`${building}-`)) {
+    return lot;
+  }
+
+  return `${building}-${lot}`;
+}
+
+export function parseSecondaryLotRefs(value: string, buildingCode = '') {
   if (!value) return [];
 
   return value
     .split(/[;/,|]/)
     .map((part) => part.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((part) => buildRefLot(buildingCode, part));
 }
 
 export function buildAddress(address: string, city: string) {

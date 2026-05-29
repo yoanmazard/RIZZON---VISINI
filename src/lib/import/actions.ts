@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth/access';
 import { buildAutoLotLinks } from '@/lib/import/lot-links';
 import type { CleanLotImportRow, ImportActionResult } from '@/lib/import/types';
 
@@ -12,14 +13,12 @@ export async function importCleanLots(rows: CleanLotImportRow[]): Promise<Import
     return { ok: false, message: 'Aucune ligne à importer.' };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, message: 'Session expirée. Reconnectez-vous.' };
+  const adminCheck = await requireAdmin();
+  if (!adminCheck.ok) {
+    return { ok: false, message: adminCheck.message };
   }
+
+  const supabase = await createClient();
 
   const refToId = new Map<string, string>();
 

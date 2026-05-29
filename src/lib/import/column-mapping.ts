@@ -12,7 +12,8 @@ const EXCLUDED_PATTERNS = [
 ];
 
 export const COLUMN_ALIASES = {
-  ref_lot: ['n° lot', 'nº lot', 'no lot', 'num lot', 'code unique', 'ref lot'],
+  ref_lot: ['n° lot', 'nº lot', 'no lot', 'num lot', 'ref lot'],
+  building_code: ['code unique_1', 'code immeuble'],
   main_type: ['type de lot', 'type lot', 'detail type', 'détail type'],
   nb_pieces: ['nb de pièces', 'nb pieces', 'nombre de pièces'],
   surface_habitable: ['surface habitable', 'surface'],

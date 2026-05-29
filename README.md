@@ -69,12 +69,14 @@ Ouvrir http://localhost:3000
 4. **`supabase db push`** : appliquer le schéma + seed `allowed_emails`
 5. Remplacer les e-mails dans `allowed_emails` et `.env` (`ALLOWED_EMAILS`)
 
-### Import CSV (dashboard)
+### Import état locatif (dashboard)
 
-1. Exporter le fichier de gestion locative en **CSV** (depuis Excel : Enregistrer sous → CSV UTF-8)
-2. Se connecter au dashboard → **Import CSV pseudonymisé**
+1. Se connecter au dashboard → **Import état locatif**
+2. Sélectionner **Etat locatif.xlsx** et **Etat locatif2.xlsx** (sélection multiple)
 3. Vérifier l'aperçu des 5 premières lignes (Loyer HC = colonne **Loyer HT**)
-4. Confirmer l'import → upsert idempotent sur `ref_lot` + reconstruction des liens annexes
+4. Confirmer l'import → upsert idempotent sur `ref_lot` (préfixé par code immeuble) + reconstruction des liens annexes
+
+Formats acceptés : `.xlsx`, `.xls`, `.csv`
 
 Colonnes filtrées côté navigateur (jamais envoyées) : nom, mail, téléphone, date/lieu de naissance, profession, SIRET, n° CAF…
 
@@ -108,7 +110,7 @@ L'hôte DB Supabase peut être en IPv6 uniquement. Utiliser le **Session pooler 
 - [x] `supabase init`
 - [x] Schéma métier V1 (migration SQL + RLS)
 - [x] Application Next.js (auth Google + MFA + liste blanche)
-- [x] Import CSV pseudonymisé + TanStack Table
+- [x] Import Etat locatif (.xlsx) + TanStack Table
 - [x] Fiche lot + rentabilité brute/nette (slide-over)
 - [x] Déliation appartement/annexes (ventilation 90/10)
 - [x] Panier d'acquisition + scénarios sauvegardés

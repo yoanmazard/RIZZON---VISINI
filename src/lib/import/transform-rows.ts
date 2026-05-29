@@ -6,6 +6,7 @@ import {
 } from '@/lib/import/column-mapping';
 import {
   buildAddress,
+  buildRefLot,
   computeLeaseSeniorityMonths,
   determineStatus,
   isAnnexLot,
@@ -46,7 +47,7 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
   const cleanRows: CleanLotImportRow[] = [];
 
   if (!headerMap.has('ref_lot')) {
-    warnings.push('Colonne « N° Lot » ou « Code unique » introuvable.');
+    warnings.push('Colonne « N° Lot » introuvable.');
   }
 
   if (!headerMap.has('net_rent')) {
@@ -58,11 +59,18 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
   }
 
   for (const row of rows) {
-    const refLot = getCell(row, headerMap, 'ref_lot');
+    const lotNumber = getCell(row, headerMap, 'ref_lot');
+    if (!lotNumber) continue;
+
+    const buildingCode = getCell(row, headerMap, 'building_code');
+    const refLot = buildRefLot(buildingCode, lotNumber);
     if (!refLot) continue;
 
     const mainType = getCell(row, headerMap, 'main_type') || 'Lot';
-    const designation = getCell(row, headerMap, 'designation') || null;
+    const designation =
+      getCell(row, headerMap, 'designation') ||
+      (row['Désignation_1'] ?? '').trim() ||
+      null;
     const status = determineStatus(row, headerMap);
     const tenantRaw = getCell(row, headerMap, 'tenant_raw');
     const tenantLabel = pseudonymizer.labelFor(tenantRaw, status);
@@ -92,7 +100,10 @@ export function transformCsvRows(rows: Record<string, string>[]): ImportParseRes
       deposit: parseNumber(getCell(row, headerMap, 'deposit')),
       lease_seniority_months: computeLeaseSeniorityMonths(getCell(row, headerMap, 'lease_start')),
       notice_in_progress: parseBoolean(getCell(row, headerMap, 'notice_in_progress')),
-      linked_annex_refs: parseSecondaryLotRefs(getCell(row, headerMap, 'secondary_lot')),
+      linked_annex_refs: parseSecondaryLotRefs(
+        getCell(row, headerMap, 'secondary_lot'),
+        buildingCode,
+      ),
       designation,
     });
   }
