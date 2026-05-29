@@ -75,6 +75,13 @@ export function determineStatus(
   const hasTenantColumn = headerMap.has('tenant_raw');
   const tenantRaw = getCell(row, headerMap, 'tenant_raw');
   const tenantStatus = getCell(row, headerMap, 'tenant_status');
+  const tenantCode = getCell(row, headerMap, 'tenant_code');
+
+  // 0. Code locataire « VACANT… » → lot vacant (signal de la source, prioritaire même si
+  //    un loyer résiduel figure encore sur la ligne).
+  if (tenantCode && /^vacant/i.test(tenantCode.trim())) {
+    return 'Vacant';
+  }
 
   // 1. Signal explicite « VACANT » (uniquement si une colonne locataire/statut existe).
   if (hasTenantColumn && isVacantTenant(tenantRaw)) {
