@@ -106,8 +106,8 @@ export function CsvImportPanel() {
           </AlertDescription>
         </Alert>
 
-        <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-10 transition hover:bg-muted/40">
-          <Upload className="mb-3 h-8 w-8 text-muted-foreground" />
+        <label className="flex cursor-pointer flex-col items-center justify-center rounded-[var(--gerimalp-radius-lg)] border border-dashed border-[var(--gerimalp-line-2)] bg-[var(--gerimalp-blue-pale)]/40 px-6 py-10 transition hover:bg-[var(--gerimalp-blue-pale)]">
+          <Upload className="mb-3 h-8 w-8 text-[var(--gerimalp-fg-3)]" />
           <span className="text-sm font-medium">{fileLabel}</span>
           <span className="mt-1 text-xs text-muted-foreground">
             Formats : .xlsx, .xls, .csv — sélection multiple possible

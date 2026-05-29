@@ -25,7 +25,7 @@ export function DashboardView({
         {isAdmin ? (
           <CsvImportPanel />
         ) : (
-          <p className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-[var(--gerimalp-line-1)] bg-white px-4 py-3 text-sm text-[var(--gerimalp-fg-2)]">
             Consultation et analyse des lots. L&apos;import des états locatifs est réservé aux
             administrateurs.
           </p>

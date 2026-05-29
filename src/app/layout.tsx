@@ -1,15 +1,24 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Bricolage_Grotesque, Lato } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-bricolage',
+});
+
+const lato = Lato({
+  subsets: ['latin'],
+  weight: ['400', '700', '900'],
+  variable: '--font-lato',
 });
 
 export const metadata: Metadata = {
-  title: 'Projet RIZZON',
+  title: 'Projet RIZZON · Gerimalp',
   description: 'Plateforme privée d\'analyse d\'acquisition immobilière',
+  icons: {
+    icon: '/brand/gerimalp-g-pictogram.svg',
+  },
 };
 
 export default function RootLayout({
@@ -19,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${inter.variable} font-sans`}>{children}</body>
+      <body className={`${bricolage.variable} ${lato.variable} font-sans`}>{children}</body>
     </html>
   );
 }

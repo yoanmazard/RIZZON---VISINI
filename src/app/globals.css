@@ -19,32 +19,58 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 6px);
+  --radius-xl: calc(var(--radius) + 16px);
+  --font-sans: var(--font-body);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.985 0.002 247);
-  --foreground: oklch(0.145 0.02 255);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0.02 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0.02 255);
-  --primary: oklch(0.34 0.06 250);
-  --primary-foreground: oklch(0.985 0.002 247);
-  --secondary: oklch(0.955 0.01 250);
-  --secondary-foreground: oklch(0.24 0.04 250);
-  --muted: oklch(0.955 0.01 250);
-  --muted-foreground: oklch(0.5 0.02 250);
-  --accent: oklch(0.955 0.01 250);
-  --accent-foreground: oklch(0.24 0.04 250);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.9 0.01 250);
-  --ring: oklch(0.55 0.08 250);
+  /* Gerimalp — Charte Graphique mars 2026 */
+  --gerimalp-blue-primary: #13265b;
+  --gerimalp-blue-deep: #1e284e;
+  --gerimalp-blue-secondary: #bbd6ec;
+  --gerimalp-blue-pale: #e3eff8;
+  --gerimalp-pink: #cd2758;
+  --gerimalp-ink: #242424;
+  --gerimalp-fg-1: #13265b;
+  --gerimalp-fg-2: #1e284e;
+  --gerimalp-fg-3: #5a6580;
+  --gerimalp-fg-4: #8a93a8;
+  --gerimalp-bg-1: #ffffff;
+  --gerimalp-bg-2: #e3eff8;
+  --gerimalp-bg-3: #bbd6ec;
+  --gerimalp-line-1: rgba(19, 38, 91, 0.1);
+  --gerimalp-line-2: rgba(19, 38, 91, 0.18);
+  --gerimalp-shadow-sm: 0 2px 6px rgba(19, 38, 91, 0.08);
+  --gerimalp-shadow-md: 0 8px 20px rgba(19, 38, 91, 0.1);
+  --gerimalp-radius-md: 8px;
+  --gerimalp-radius-lg: 14px;
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-body: var(--font-bricolage), system-ui, sans-serif;
+  --font-baseline: var(--font-lato), system-ui, sans-serif;
+
+  /* shadcn mapping */
+  --radius: 0.5rem;
+  --background: var(--gerimalp-bg-1);
+  --foreground: var(--gerimalp-fg-1);
+  --card: var(--gerimalp-bg-1);
+  --card-foreground: var(--gerimalp-fg-1);
+  --popover: var(--gerimalp-bg-1);
+  --popover-foreground: var(--gerimalp-fg-1);
+  --primary: var(--gerimalp-blue-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--gerimalp-blue-pale);
+  --secondary-foreground: var(--gerimalp-blue-primary);
+  --muted: var(--gerimalp-blue-pale);
+  --muted-foreground: var(--gerimalp-fg-3);
+  --accent: var(--gerimalp-blue-secondary);
+  --accent-foreground: var(--gerimalp-blue-primary);
+  --destructive: var(--gerimalp-pink);
+  --border: var(--gerimalp-line-1);
+  --input: var(--gerimalp-line-2);
+  --ring: var(--gerimalp-blue-primary);
 }
 
 @layer base {
@@ -52,7 +78,45 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    font-family: var(--font-body);
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    color: var(--gerimalp-fg-1);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--gerimalp-fg-1);
+  }
+
+  a:hover {
+    color: var(--gerimalp-pink);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .eyebrow {
+    font-family: var(--font-baseline);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .baseline {
+    font-family: var(--font-baseline);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 }

@@ -34,8 +34,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-6">
-      <p className="text-sm text-muted-foreground">
-        Connecté en tant que {user?.email}
+      <p className="text-sm text-[var(--gerimalp-fg-3)]">
+        Connecté en tant que <span className="font-medium text-[var(--gerimalp-fg-1)]">{user?.email}</span>
         {access?.isAdmin ? ' · Administrateur' : ' · Utilisateur'}
       </p>
 
